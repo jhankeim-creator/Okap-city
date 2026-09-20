@@ -80,8 +80,6 @@ export function torsoShell(
     const mesh = latheMesh(profile, mat, 20);
     mesh.scale.set(1, 1, depth);
     joints[index].add(mesh);
-    group.attach?.(mesh);
-    joints[index].add(mesh);
   }
   return group;
 }
