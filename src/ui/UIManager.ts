@@ -23,10 +23,10 @@ export class UIManager {
   mount() {
     this.root.innerHTML = "";
     this.root.append(
-      el("div", { id: "cinematic-overlay", class: "overlay show" }, [
+      el("div", { id: "cinematic-overlay", class: "overlay show cine-photo" }, [
         el("div", { class: "cine-copy" }, [
           el("p", { class: "voice" }, ["Byenveni nan Okap City. Vil la gen anpil sekrè... men jodi a, sèl bagay ki konte se siviv."]),
-          el("h1", { class: "logo" }, ["OKAP CITY"]),
+          el("h1", { class: "logo logo-crown" }, ["OKAP CITY"]),
           el("p", { class: "slogan" }, ["BATAY LA KÒMANSE NAN OKAP"]),
           el("button", { class: "btn gold", id: "skip-cine" }, ["KONTINYE"]),
         ]),
@@ -295,7 +295,23 @@ export class UIManager {
     const panel = this.root.querySelector("#panel-overlay")!;
     panel.classList.add("show");
     this.root.querySelector("#menu-overlay")?.classList.add("show");
+    if (name === "chars") {
+      panel.innerHTML = this.charsScreenHtml();
+      return;
+    }
     panel.innerHTML = `<div class="panel">${this.panelHtml(name)}<button class="btn" data-act="close-panel">RETOUNEN</button></div>`;
+  }
+
+  private charsScreenHtml() {
+    const p = this.game.save.state.profile;
+    return `<div class="roster-screen">
+      <img src="/concept/roster.png" alt="OKAP CITY pèsonaj"/>
+      <div class="hotspots">
+        ${CHARACTERS.map((c, i) => `<button class="hot ${p.characterId === c.id ? "sel" : ""}" data-act="pick-char" data-arg="${c.id}" style="grid-area:c${i}">${c.name}</button>`).join("")}
+      </div>
+      <p class="roster-bio">${CHARACTERS.find((c) => c.id === p.characterId)?.bio ?? ""}</p>
+      <button class="btn gold roster-back" data-act="close-panel">RETOUNEN</button>
+    </div>`;
   }
 
   isOverlay() {
@@ -349,9 +365,9 @@ export class UIManager {
   renderMenu() {
     const p = this.game.save.state.profile;
     this.root.querySelector("#menu-overlay")!.innerHTML = `
-      <div class="menu-shell">
+      <div class="menu-shell photo-menu">
         <div class="brand">
-          <div class="crest">OC</div>
+          <div class="crest">♛</div>
           <div>
             <h1 class="logo-crown">OKAP CITY</h1>
             <p class="slogan">BATAY LA KÒMANSE NAN OKAP</p>
@@ -403,16 +419,7 @@ export class UIManager {
       ).join("")}</div>`;
     }
     if (name === "chars") {
-      return `<h2 class="logo-crown">PERSONAJ</h2><p>8 pèsonaj orijinal · 4 gason · 4 fi · chak genyen pwòp istwa.</p>
-      <div class="roster">${CHARACTERS.map(
-        (c) => `<article class="card ${p.characterId === c.id ? "sel" : ""}"><h3>${c.mark} ${c.name}</h3><p>${c.role}</p><p>${c.bio}</p><button class="btn" data-act="pick-char" data-arg="${c.id}">${p.characterId === c.id ? "CHWAZI" : "SELEKSYONE"}</button></article>`,
-      ).join("")}</div>
-      <h3>Pèsonalizasyon</h3><p class="muted">Cheve, outfit, soulye, sak, mask, linèt, gant, emote ak skin. Cosmetics pa bay avantaj konba.</p>
-      <div class="cards">${COSMETICS.filter((c) => ["cheve", "outfit", "shoes", "backpack", "mask", "glasses", "gloves", "emote", "skin"].includes(c.slot))
-        .map((c) => `<article class="card"><b style="color:${RARITY_COLOR[c.rarity]}">${c.name}</b><p>${c.slot}</p>
-          ${p.unlockedCosmetics.includes(c.id) ? `<button class="btn" data-act="equip" data-arg="${c.id}">METE</button>` : `<button class="btn gold" data-act="buy" data-arg="${c.id}">ACHTE ${c.price}</button>`}
-        </article>`)
-        .join("")}</div>`;
+      return this.charsScreenHtml();
     }
     if (name === "cars") {
       return `<h2>MACHIN</h2><div class="cards">${VEHICLES.map(
@@ -482,7 +489,7 @@ export class UIManager {
   }
 
   private loadingHtml() {
-    return `<div class="panel center load"><div class="crest big">OC</div><h1>OKAP CITY</h1><p id="load-tip">${LOADING_TIPS[0]}</p><div class="bar"><i id="load-bar"></i></div></div>`;
+    return `<div class="panel center load photo-load"><h1 class="logo-crown">OKAP CITY</h1><p id="load-tip">${LOADING_TIPS[0]}</p><div class="bar"><i id="load-bar"></i></div></div>`;
   }
 
   private resultHtml(won: boolean, extra?: Record<string, unknown>) {
@@ -611,8 +618,12 @@ export class UIManager {
     if (compass) compass.textContent = `${g.compass()}   ·   ${z.name}`;
     const name = this.root.querySelector("#hud-name");
     if (name) name.textContent = g.save.state.profile.username;
-    const portrait = this.root.querySelector("#portrait");
-    if (portrait) portrait.textContent = (g.save.state.profile.username[0] ?? "J").toUpperCase();
+    const portrait = this.root.querySelector<HTMLElement>("#portrait");
+    if (portrait) {
+      const id = g.save.state.profile.characterId;
+      portrait.style.backgroundImage = `url(/textures/portraits/${id}.png)`;
+      portrait.textContent = "";
+    }
     const missions = this.root.querySelector("#mission-box");
     if (missions) {
       missions.innerHTML = `<b>MISYON</b>${g.liveMissions.items.map((m) => `<li class="${m.done ? "done" : ""}">${m.done ? "☑" : "☐"} ${m.title}</li>`).join("")}`;

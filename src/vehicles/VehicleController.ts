@@ -18,17 +18,54 @@ export interface VehicleActor {
 
 function carMesh(def: VehicleDef) {
   const g = new THREE.Group();
-  const body = new THREE.Mesh(
-    new THREE.BoxGeometry(def.kind === "MOTORCYCLE" ? 0.7 : 2.4, def.kind === "MOTORCYCLE" ? 0.7 : 0.9, def.kind === "MOTORCYCLE" ? 2.1 : 4.4),
-    new THREE.MeshLambertMaterial({ color: def.color }),
-  );
-  body.position.y = def.kind === "MOTORCYCLE" ? 0.55 : 0.7;
-  body.castShadow = true;
-  g.add(body);
-  if (def.kind !== "MOTORCYCLE") {
-    const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.7, 2.1), new THREE.MeshLambertMaterial({ color: 0x7ec8e3, transparent: true, opacity: 0.55 }));
-    cabin.position.set(0, 1.25, -0.3);
+  const paint = new THREE.MeshStandardMaterial({ color: def.color, roughness: 0.35, metalness: 0.45 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.6, metalness: 0.2 });
+  const glass = new THREE.MeshStandardMaterial({ color: 0x89c2d9, roughness: 0.1, metalness: 0.3, transparent: true, opacity: 0.45 });
+  if (def.kind === "MOTORCYCLE") {
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.55, 1.9), paint);
+    body.position.y = 0.55;
+    body.castShadow = true;
+    g.add(body);
+  } else {
+    const body = new THREE.Mesh(new THREE.BoxGeometry(2.05, 0.95, 4.55), paint);
+    body.position.y = 0.78;
+    body.castShadow = true;
+    g.add(body);
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.92, 0.82, 2.15), glass);
+    cabin.position.set(0, 1.48, -0.28);
     g.add(cabin);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.08, 2.25), paint);
+    roof.position.set(0, 1.92, -0.22);
+    g.add(roof);
+    const rack = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.06, 2.05), dark);
+    rack.position.set(0, 2.02, -0.2);
+    g.add(rack);
+    for (const sx of [-0.62, 0.62]) {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.08, 2.1), dark);
+      rail.position.set(sx, 2.06, -0.2);
+      g.add(rail);
+    }
+    const spare = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.16, 14), dark);
+    spare.rotation.z = Math.PI / 2;
+    spare.position.set(0, 0.92, 2.42);
+    g.add(spare);
+    const cap = new THREE.Mesh(new THREE.CircleGeometry(0.28, 16), new THREE.MeshStandardMaterial({ color: 0xf4f1ea, roughness: 0.4 }));
+    cap.position.set(0, 0.92, 2.51);
+    g.add(cap);
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.12, 0.06), new THREE.MeshStandardMaterial({ color: 0xc81e1e, emissive: 0x7a1010, emissiveIntensity: 0.35 }));
+    tail.position.set(0, 0.95, 2.3);
+    g.add(tail);
+    for (const [x, z] of [
+      [-0.95, 1.45],
+      [0.95, 1.45],
+      [-0.95, -1.45],
+      [0.95, -1.45],
+    ]) {
+      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.28, 12), dark);
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(x, 0.38, z);
+      g.add(wheel);
+    }
   }
   g.userData.vehicleId = def.id;
   return g;
@@ -47,7 +84,7 @@ export class VehicleController {
   spawnAround() {
     this.clear();
     const spots = [
-      new THREE.Vector3(18, 0, 22),
+      new THREE.Vector3(10, 0, 16),
       new THREE.Vector3(-90, 0, 100),
       new THREE.Vector3(100, 0, 20),
       new THREE.Vector3(-20, 0, 140),

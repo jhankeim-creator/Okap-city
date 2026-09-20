@@ -49,10 +49,10 @@ export class WeatherSystem {
     this.sun.position.set(Math.cos(this.timeOfDay * 0.26) * 80, 28 + sunH * 70, Math.sin(this.timeOfDay * 0.26) * 80);
     this.sun.intensity = day ? 1.35 * sunH + 0.45 : 0.28;
     this.hemi.intensity = day ? 0.95 : 0.32;
-    const sky = this.kind === "bwouya" ? 0xa9c0cc : day ? 0x62c3e0 : 0x10233d;
+    const sky = this.kind === "bwouya" ? 0xa9c0cc : day ? 0x7ec8ea : 0x10233d;
     this.fog.color.set(sky);
-    this.fog.near = this.kind === "bwouya" ? 40 : 90;
-    this.fog.far = this.kind === "bwouya" ? 180 : this.kind === "nwaj" ? 280 : 420;
+    this.fog.near = this.kind === "bwouya" ? 40 : 160;
+    this.fog.far = this.kind === "bwouya" ? 180 : this.kind === "nwaj" ? 340 : 520;
     this.scene.background = new THREE.Color(sky);
     if (this.rain) {
       this.rain.position.copy(follow);

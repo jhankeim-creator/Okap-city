@@ -111,12 +111,12 @@ export class PlayerController {
 
   updateCamera(ads = false) {
     this.height = this.stance === "prone" ? 0.4 : this.stance === "crouch" ? 1.15 : 1.7;
-    const back = ads ? 2.4 : 5.2;
-    const side = ads ? 0.42 : 0.85;
-    const camTarget = this.position.clone().add(new THREE.Vector3(0, this.height + 0.35, 0));
+    const back = ads ? 2.2 : 4.6;
+    const side = ads ? 0.48 : 1.05;
+    const camTarget = this.position.clone().add(new THREE.Vector3(0, this.height + 0.28, 0));
     const offset = new THREE.Vector3(
       Math.sin(this.yaw) * back + Math.cos(this.yaw) * side,
-      1.55 - this.pitch * 1.8,
+      1.42 - this.pitch * 1.8,
       Math.cos(this.yaw) * back - Math.sin(this.yaw) * side,
     );
     this.camera.position.copy(camTarget).add(offset);
