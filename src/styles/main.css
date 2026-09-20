@@ -35,9 +35,10 @@ html, body, #game-root { width: 100%; height: 100%; overflow: hidden; background
 .crest { width: 58px; height: 58px; border-radius: 16px; display: grid; place-items: center; background: linear-gradient(160deg, var(--gold), #8a6a10); color: #07111f; font-weight: 900; }
 .crest.big { width: 84px; height: 84px; font-size: 28px; margin: 0 auto 12px; }
 .menu-grid { display: grid; grid-template-columns: repeat(2, minmax(180px, 280px)); gap: 10px; max-width: 620px; }
+.menu-shell h1 { font-size: 42px; text-shadow: 0 8px 28px rgba(0,0,0,0.45); }
 .menu-foot { display: flex; gap: 18px; align-items: center; color: var(--muted); font-size: 13px; }
 
-.btn { border: 1px solid rgba(212,160,23,0.35); background: rgba(16,35,61,0.88); color: var(--white); padding: 12px 16px; border-radius: 10px; letter-spacing: 0.08em; font-weight: 700; cursor: pointer; }
+.btn { border: 1px solid rgba(212,160,23,0.35); background: rgba(16,35,61,0.88); color: var(--white); padding: 12px 16px; border-radius: 10px; letter-spacing: 0.08em; font-weight: 700; cursor: pointer; text-transform: uppercase; }
 .btn:hover, .btn.sel { border-color: var(--gold); background: #173252; }
 .btn.gold { background: linear-gradient(180deg, var(--gold-2), var(--gold)); color: #07111f; }
 .btn:disabled { opacity: 0.45; cursor: default; }
@@ -62,28 +63,41 @@ input[type="text"], input:not([type]), input[type="search"] { background: #10233
 .bar { height: 8px; background: #1b2d44; border-radius: 99px; overflow: hidden; margin-top: 16px; }
 .bar i { display: block; height: 100%; width: 0; background: var(--gold); }
 
-.compass { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: var(--glass); padding: 4px 16px; border-radius: 99px; border: 1px solid rgba(212,160,23,0.3); }
-.minimap { position: absolute; top: 12px; left: 12px; width: 118px; height: 118px; border-radius: 12px; background: rgba(7,17,31,0.7); border: 1px solid var(--gold); overflow: hidden; }
+.compass-bar { position: absolute; top: 6px; left: 22%; right: 22%; height: 28px; display: flex; align-items: center; justify-content: center; color: #f6f3ea; font-size: 11px; letter-spacing: 0.16em; text-shadow: 0 2px 8px #000; pointer-events: none; }
+.minimap { position: absolute; top: 12px; left: 12px; width: 126px; height: 126px; border-radius: 50%; background: rgba(7,17,31,0.72); border: 3px solid rgba(246,243,234,0.85); overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
 .minimap .me { position: absolute; width: 8px; height: 8px; background: #4ea8de; border-radius: 50%; }
 .minimap .mate { position: absolute; width: 6px; height: 6px; background: #3ddc84; border-radius: 50%; }
 .minimap .zone { position: absolute; border: 2px solid #4ea8de; border-radius: 50%; }
-.top-right { position: absolute; top: 12px; right: 16px; background: var(--glass); padding: 6px 10px; border-radius: 8px; }
-.bars { position: absolute; left: 16px; bottom: 22px; width: 220px; }
-.bars i { display: block; height: 10px; margin-top: 4px; border-radius: 8px; }
-#hp-bar { background: #e63946; width: 100%; }
+.mission-box { position: absolute; top: 148px; left: 12px; width: 250px; background: rgba(7,17,31,0.58); border-radius: 10px; padding: 8px 10px; font-size: 12px; }
+.mission-box b { color: var(--gold); }
+.mission-box li { list-style: none; margin: 4px 0; }
+.mission-box li.done { color: #3ddc84; text-decoration: line-through; }
+.top-right { position: absolute; top: 12px; right: 16px; display: grid; gap: 6px; justify-items: end; }
+.meta-pill { background: rgba(7,17,31,0.55); padding: 5px 10px; border-radius: 8px; font-size: 12px; }
+.weapon-stack { background: rgba(7,17,31,0.55); padding: 6px 10px; border-radius: 8px; min-width: 120px; text-align: right; }
+.player-card { position: absolute; left: 16px; bottom: 16px; display: flex; gap: 10px; align-items: center; background: rgba(7,17,31,0.5); padding: 8px 12px; border-radius: 14px; }
+.portrait { width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(160deg, #d4a017, #5c3a24); display: grid; place-items: center; font-weight: 800; }
+.bars { width: 168px; }
+.bars i { display: block; height: 8px; margin-top: 4px; border-radius: 8px; background: #2a2a2a; }
+#hp-bar { background: #e9ecef; width: 100%; }
 #ar-bar { background: #4ea8de; width: 0; }
-.ammo { position: absolute; right: 24px; bottom: 150px; font-weight: 700; text-shadow: 0 2px 8px #000; }
-.zone-name { position: absolute; top: 44px; left: 50%; transform: translateX(-50%); font-size: 13px; color: var(--gold); }
-.joy { position: absolute; left: 28px; bottom: 70px; width: 118px; height: 118px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); }
-.joy b { position: absolute; width: 36px; height: 36px; border-radius: 50%; left: 41px; top: 41px; background: rgba(212,160,23,0.8); }
-.look { position: absolute; right: 140px; bottom: 40px; width: 180px; height: 140px; }
-.btns { position: absolute; right: 16px; bottom: 16px; display: grid; grid-template-columns: repeat(2, 72px); gap: 6px; }
-.btns button, .pings button, .chat-dock button { border: 0; border-radius: 10px; padding: 10px 6px; background: rgba(16,35,61,0.82); color: white; font-size: 11px; font-weight: 700; }
-#fire { background: #9b2226; grid-column: span 2; }
-.pings { position: absolute; top: 54px; right: 12px; display: flex; flex-direction: column; gap: 4px; }
-.chat-dock { position: absolute; left: 160px; bottom: 16px; display: flex; gap: 6px; flex-wrap: wrap; max-width: 320px; }
+.zone-name { position: absolute; top: 36px; left: 50%; transform: translateX(-50%); font-size: 12px; color: var(--gold); text-shadow: 0 2px 8px #000; }
+.joy { position: absolute; left: 28px; bottom: 86px; width: 118px; height: 118px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.28); }
+.joy b { position: absolute; width: 36px; height: 36px; border-radius: 50%; left: 41px; top: 41px; background: rgba(246,243,234,0.85); }
+.look { position: absolute; right: 170px; bottom: 50px; width: 200px; height: 150px; }
+.btns { position: absolute; right: 16px; bottom: 16px; display: grid; grid-template-columns: repeat(3, 58px); gap: 8px; }
+.btns button { width: 58px; height: 58px; border: 0; border-radius: 50%; background: rgba(16,35,61,0.78); color: white; font-size: 9px; font-weight: 800; white-space: nowrap; }
+#fire { width: 72px; height: 72px; background: #9b2226; grid-column: span 1; }
+.vehicle-hud { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: none; gap: 16px; align-items: center; background: rgba(7,17,31,0.5); padding: 8px 16px; border-radius: 16px; }
+.vehicle-hud.on { display: flex; }
+.crosshair { position: absolute; left: 50%; top: 48%; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.75); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+.chat-dock { position: absolute; left: 16px; bottom: 220px; display: flex; gap: 6px; flex-wrap: wrap; max-width: 280px; }
+.chat-dock button { border: 0; border-radius: 10px; padding: 8px 10px; background: rgba(16,35,61,0.82); color: white; font-size: 11px; }
 .toast { position: absolute; top: 72px; left: 50%; transform: translateX(-50%); background: var(--glass); border: 1px solid var(--gold); padding: 8px 16px; border-radius: 10px; display: none; }
 .toast.show { display: block; }
+.roster { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.roster .card { text-align: left; min-height: 160px; }
+.logo-crown::before { content: "♛ "; color: var(--gold); }
 
 @media (max-width: 900px) {
   .menu-grid { grid-template-columns: 1fr 1fr; }

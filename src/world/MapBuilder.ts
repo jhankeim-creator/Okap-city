@@ -234,13 +234,61 @@ export class MapBuilder {
   }
 
   private houses(g: THREE.Group, zone: ZoneDef, colliders: Collider[], interactables: MapData["interactables"], base: number) {
-    const palette = [base, 0xe07a5f, 0x2a9d8f, 0xf4a261, 0xf1faee, 0xb5838d];
+    const palette = [base, 0xe07a5f, 0x2a9d8f, 0xf4a261, 0xf1faee, 0xb5838d, 0x457b9d, 0xffddd2];
     for (let i = 0; i < 16; i++) {
       const x = zone.x + ((i % 4) - 1.5) * 16;
       const z = zone.z + (Math.floor(i / 4) - 1.5) * 16;
-      this.building(g, x, z, 8, 5.5, 7, palette[i % palette.length], colliders, true);
-      addBox(g, 1.8, 3.4, 1.8, x + 5.2, 1.7, z + 2, lamb(0x6d6875));
+      this.caribbeanHouse(g, x, z, palette[i % palette.length], colliders, true);
+      this.palm(g, x + 5.6, z + 3.2);
+      if (i % 3 === 0) this.flag(g, x - 4.2, z + 3.4);
     }
+  }
+
+  private caribbeanHouse(parent: THREE.Group, x: number, z: number, color: number, colliders: Collider[], enterable = true) {
+    const w = 8.4;
+    const d = 7.2;
+    const h = 4.6;
+    addBox(parent, w, h, d, x, h / 2, z, lamb(color));
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(6.4, 2.2, 4), lamb(0xc36f3c));
+    roof.position.set(x, h + 1.1, z);
+    roof.rotation.y = Math.PI / 4;
+    roof.castShadow = true;
+    parent.add(roof);
+    addBox(parent, 1.15, 2.15, 0.12, x, 1.1, z + d / 2 + 0.04, lamb(0x3a2a1a));
+    addBox(parent, 0.7, 0.7, 0.08, x - 2.1, 2.6, z + d / 2 + 0.05, lamb(0x7ec8e3, 0x7ec8e3, 0.15), false);
+    addBox(parent, 0.7, 0.7, 0.08, x + 2.1, 2.6, z + d / 2 + 0.05, lamb(0x7ec8e3, 0x7ec8e3, 0.15), false);
+    addBox(parent, 3.2, 0.12, 1.4, x, 3.15, z + d / 2 + 0.6, lamb(0xede0d4));
+    addBox(parent, 0.12, 1.1, 1.4, x - 1.55, 2.6, z + d / 2 + 0.6, lamb(0xede0d4));
+    colliders.push({
+      minX: x - w / 2,
+      maxX: x + w / 2,
+      minZ: z - d / 2,
+      maxZ: z + d / 2,
+      minY: 0,
+      maxY: h + 2,
+      enterable,
+      door: new THREE.Vector3(x, 0, z + d / 2),
+    });
+  }
+
+  private palm(parent: THREE.Group, x: number, z: number) {
+    const tree = new THREE.Group();
+    addBox(tree, 0.28, 4.4, 0.28, 0, 2.2, 0, lamb(0x6b4226));
+    for (let i = 0; i < 6; i++) {
+      const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, 2.6), lamb(0x2d6a4f));
+      leaf.position.set(0, 4.3, 0.7);
+      leaf.rotation.y = (i / 6) * Math.PI * 2;
+      leaf.rotation.x = -0.55;
+      tree.add(leaf);
+    }
+    tree.position.set(x, 0, z);
+    parent.add(tree);
+  }
+
+  private flag(parent: THREE.Group, x: number, z: number) {
+    addBox(parent, 0.08, 4.2, 0.08, x, 2.1, z, lamb(0x222831));
+    addBox(parent, 1.15, 0.42, 0.04, x + 0.62, 3.85, z, lamb(0x00209f));
+    addBox(parent, 1.15, 0.42, 0.04, x + 0.62, 3.43, z, lamb(0xd21034));
   }
 
   private port(g: THREE.Group, zone: ZoneDef, colliders: Collider[]) {
@@ -261,15 +309,7 @@ export class MapBuilder {
       addBox(g, 6, 3.2, 6, x, 1.6, zone.z - 6, lamb(0xf4f1ea));
       colliders.push({ minX: x - 3, maxX: x + 3, minZ: zone.z - 9, maxZ: zone.z - 3, minY: 0, maxY: 3.2 });
     }
-    for (let i = 0; i < 8; i++) {
-      const tree = new THREE.Group();
-      addBox(tree, 0.35, 3.2, 0.35, 0, 1.6, 0, lamb(0x6b4226));
-      const leaf = new THREE.Mesh(new THREE.SphereGeometry(1.6, 8, 6), lamb(0x2d6a4f));
-      leaf.position.y = 3.4;
-      tree.add(leaf);
-      tree.position.set(zone.x - 16 + i * 5, 0, zone.z + 8);
-      g.add(tree);
-    }
+    for (let i = 0; i < 10; i++) this.palm(g, zone.x - 18 + i * 4.2, zone.z + 8);
   }
 
   private industrial(g: THREE.Group, zone: ZoneDef, colliders: Collider[]) {

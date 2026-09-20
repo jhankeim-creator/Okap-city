@@ -42,17 +42,18 @@ export class WeatherSystem {
   }
 
   update(dt: number, follow: THREE.Vector3) {
-    this.timeOfDay = (this.timeOfDay + dt * 0.18) % 24;
-    const day = this.timeOfDay > 6 && this.timeOfDay < 18;
+    this.timeOfDay = (this.timeOfDay + dt * 0.025) % 24;
+    const day = this.timeOfDay > 5.5 && this.timeOfDay < 18.5;
     const t = Math.sin(((this.timeOfDay - 6) / 12) * Math.PI);
-    const sunH = Math.max(0.05, t);
-    this.sun.position.set(Math.cos(this.timeOfDay * 0.26) * 80, 20 + sunH * 70, Math.sin(this.timeOfDay * 0.26) * 80);
-    this.sun.intensity = day ? 1.15 * sunH + 0.25 : 0.18;
-    this.hemi.intensity = day ? 0.7 : 0.22;
-    this.fog.color.set(this.kind === "bwouya" ? 0x9aa7b2 : day ? 0xb7d6e8 : 0x07111f);
-    this.fog.near = this.kind === "bwouya" ? 12 : 30;
-    this.fog.far = this.kind === "bwouya" ? 90 : this.kind === "nwaj" ? 160 : 220;
-    this.scene.background = new THREE.Color(this.fog.color);
+    const sunH = Math.max(0.18, t);
+    this.sun.position.set(Math.cos(this.timeOfDay * 0.26) * 80, 28 + sunH * 70, Math.sin(this.timeOfDay * 0.26) * 80);
+    this.sun.intensity = day ? 1.35 * sunH + 0.45 : 0.28;
+    this.hemi.intensity = day ? 0.95 : 0.32;
+    const sky = this.kind === "bwouya" ? 0xa9c0cc : day ? 0x62c3e0 : 0x10233d;
+    this.fog.color.set(sky);
+    this.fog.near = this.kind === "bwouya" ? 40 : 90;
+    this.fog.far = this.kind === "bwouya" ? 180 : this.kind === "nwaj" ? 280 : 420;
+    this.scene.background = new THREE.Color(sky);
     if (this.rain) {
       this.rain.position.copy(follow);
       const att = this.rain.geometry.getAttribute("position") as THREE.BufferAttribute;

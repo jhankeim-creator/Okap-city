@@ -352,7 +352,7 @@ export class UIManager {
         <div class="brand">
           <div class="crest">OC</div>
           <div>
-            <h1>OKAP CITY</h1>
+            <h1 class="logo-crown">OKAP CITY</h1>
             <p class="slogan">BATAY LA KÒMANSE NAN OKAP</p>
           </div>
         </div>
@@ -402,8 +402,9 @@ export class UIManager {
       ).join("")}</div>`;
     }
     if (name === "chars") {
-      return `<h2>PERSONAJ</h2><div class="cards">${CHARACTERS.map(
-        (c) => `<article class="card ${p.characterId === c.id ? "sel" : ""}"><h3>${c.name}</h3><p>${c.bio}</p><button class="btn" data-act="pick-char" data-arg="${c.id}">${p.characterId === c.id ? "CHWAZI" : "SELEKSYONE"}</button></article>`,
+      return `<h2 class="logo-crown">PERSONAJ</h2><p>8 pèsonaj orijinal · 4 gason · 4 fi · chak genyen pwòp istwa.</p>
+      <div class="roster">${CHARACTERS.map(
+        (c) => `<article class="card ${p.characterId === c.id ? "sel" : ""}"><h3>${c.mark} ${c.name}</h3><p>${c.role}</p><p>${c.bio}</p><button class="btn" data-act="pick-char" data-arg="${c.id}">${p.characterId === c.id ? "CHWAZI" : "SELEKSYONE"}</button></article>`,
       ).join("")}</div>
       <h3>Pèsonalizasyon</h3><p class="muted">Cheve, outfit, soulye, sak, mask, linèt, gant, emote ak skin. Cosmetics pa bay avantaj konba.</p>
       <div class="cards">${COSMETICS.filter((c) => ["cheve", "outfit", "shoes", "backpack", "mask", "glasses", "gloves", "emote", "skin"].includes(c.slot))
@@ -501,30 +502,40 @@ export class UIManager {
 
   renderHud() {
     this.root.querySelector("#hud-overlay")!.innerHTML = `
-      <div class="compass" id="compass">N</div>
+      <div class="compass-bar" id="compass">N  NW  W  SW  S  SE  E  NE  N</div>
       <div class="minimap" id="minimap"></div>
-      <div class="top-right"><span id="alive">24</span> vivan · <span id="zone-t">0:45</span></div>
-      <div class="bars">
-        <i id="hp-bar"></i><i id="ar-bar"></i>
+      <div class="mission-box" id="mission-box"></div>
+      <div class="top-right">
+        <div class="meta-pill"><span id="alive">24</span> · ✕ <span id="kills">0</span></div>
+        <div class="meta-pill" id="zone-t">0:45 Safe zone</div>
+        <div class="weapon-stack" id="ammo"></div>
       </div>
-      <div class="ammo" id="ammo"></div>
       <div class="zone-name" id="zone-name"></div>
+      <div class="crosshair"></div>
+      <div class="player-card">
+        <div class="portrait" id="portrait">J</div>
+        <div>
+          <b id="hud-name">Junior</b>
+          <div class="bars"><i id="hp-bar"></i><i id="ar-bar"></i></div>
+        </div>
+      </div>
       <div class="joy" id="joy"><b></b></div>
       <div class="look" id="look"></div>
       <div class="btns">
-        <button data-act="fire-down" id="fire">TIRE</button>
-        <button data-act="aim">VIZE</button>
         <button data-act="jump">SOTE</button>
+        <button data-act="aim">VIZE</button>
+        <button data-act="fire-down" id="fire">TIRE</button>
         <button data-act="crouch">AKOUPI</button>
-        <button data-act="prone">Kouche</button>
         <button data-act="reload">CHAJ</button>
-        <button data-act="weapon">ZAM</button>
         <button data-act="interact">ANTRE</button>
         <button data-act="heal">GERI</button>
         <button data-act="nade">GRENAD</button>
+        <button data-act="weapon">ZAM</button>
       </div>
-      <div class="pings">
-        ${["enemy", "weapon", "location", "danger", "loot", "vehicle"].map((p) => `<button data-act="ping" data-arg="${p}">${p}</button>`).join("")}
+      <div class="vehicle-hud" id="vehicle-hud">
+        <span id="speedo">0 KM/H</span>
+        <span id="fuel">GAZ 100</span>
+        <button data-act="interact">SOTI</button>
       </div>
       <div class="chat-dock" id="chat-dock"></div>`;
     this.bindPads();
@@ -585,16 +596,35 @@ export class UIManager {
     if (hp) hp.style.width = `${g.health.hp}%`;
     if (ar) ar.style.width = `${Math.min(100, g.armor.armor)}%`;
     const ammo = this.root.querySelector("#ammo");
-    if (ammo) ammo.textContent = `${g.weapons.def.name}  ${g.weapons.mag}/${g.inventory.ammo[g.weapons.def.category] ?? 0}`;
+    if (ammo) ammo.innerHTML = `${g.weapons.def.name}<br>${g.weapons.mag}/${g.inventory.ammo[g.weapons.def.category] ?? 0}`;
     const z = g.zoneInfo();
     const zt = this.root.querySelector("#zone-t");
-    if (zt) zt.textContent = z.shrinking ? "ZÒN AP FÈMEN" : z.timer;
+    if (zt) zt.textContent = z.shrinking ? "Safe zone ap fèmen" : `${z.timer} Safe zone`;
     const zn = this.root.querySelector("#zone-name");
     if (zn) zn.textContent = z.name;
     const al = this.root.querySelector("#alive");
     if (al) al.textContent = String(g.bots.aliveCount() + (g.health.dead ? 0 : 1));
+    const kills = this.root.querySelector("#kills");
+    if (kills) kills.textContent = String(g.kills);
     const compass = this.root.querySelector("#compass");
-    if (compass) compass.textContent = g.compass();
+    if (compass) compass.textContent = `${g.compass()}   ·   ${z.name}`;
+    const name = this.root.querySelector("#hud-name");
+    if (name) name.textContent = g.save.state.profile.username;
+    const portrait = this.root.querySelector("#portrait");
+    if (portrait) portrait.textContent = (g.save.state.profile.username[0] ?? "J").toUpperCase();
+    const missions = this.root.querySelector("#mission-box");
+    if (missions) {
+      missions.innerHTML = `<b>MISYON</b>${g.liveMissions.items.map((m) => `<li class="${m.done ? "done" : ""}">${m.done ? "☑" : "☐"} ${m.title}</li>`).join("")}`;
+    }
+    const vh = this.root.querySelector("#vehicle-hud");
+    if (vh) {
+      vh.classList.toggle("on", g.player.inVehicle);
+      const v = g.vehicles.current;
+      const speed = this.root.querySelector("#speedo");
+      const fuel = this.root.querySelector("#fuel");
+      if (v && speed) speed.textContent = `${Math.abs(Math.round(v.speed * 4))} KM/H`;
+      if (v && fuel) fuel.textContent = `GAZ ${Math.round(v.fuel)}`;
+    }
     this.drawMinimap();
     const dock = this.root.querySelector("#chat-dock");
     if (dock) {

@@ -6,6 +6,14 @@ Jwèt aksyon third-person 3D orijinal an **Kreyòl Ayisyen**. Genre: TPS / Battl
 
 Pa yon kopi Free Fire, PUBG, Fortnite ni okenn lòt jwèt. Kat, pèsonaj, zam, UI, mizik, son, istwa ak logo yo orijinal.
 
+## Referans ou voye yo
+Imaj konsepsyon + kòd Unity C# yo entegre:
+- HUD (konpa, minimap won, misyon, zam, HP, bouton won, machin)
+- Kay Karayib ak palmis
+- 8 pèsonaj ak wòl
+- Misyon teren (valiz, kay, machin, pò)
+- Starter Unity nan `unity/Assets/Scripts`
+
 ## Jwe kounye a
 
 ```bash

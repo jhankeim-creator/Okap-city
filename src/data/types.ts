@@ -39,6 +39,8 @@ export interface CharacterDef {
   name: string;
   gender: "gason" | "fi";
   bio: string;
+  role: string;
+  mark: string;
   skin: string;
   shirt: string;
   pants: string;

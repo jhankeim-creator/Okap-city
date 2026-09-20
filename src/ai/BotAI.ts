@@ -70,7 +70,7 @@ export class BotAI {
     const def = CHARACTERS[(i + 1) % CHARACTERS.length];
     const rig = createCharacterRig(def.id, 1);
     const ang = rand(0, Math.PI * 2);
-    const r = rand(30, 170);
+    const r = rand(12, 70);
     const pos = new THREE.Vector3(Math.cos(ang) * r, 0, Math.sin(ang) * r);
     rig.root.position.copy(pos);
     this.scene.add(rig.root);

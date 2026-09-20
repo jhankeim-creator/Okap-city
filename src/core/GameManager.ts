@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { CHARACTERS, CHARACTER_BY_ID } from "../data/characters";
 import { WEAPON_BY_ID } from "../data/weapons";
 import { LOADING_TIPS, MAP_SIZE, VEHICLES, ZONES } from "../data/world";
-import type { BotDifficulty, MatchPhase, TeamMode, WeatherKind } from "../data/types";
+import type { BotDifficulty, MatchPhase, TeamMode } from "../data/types";
 import { bus } from "./EventBus";
 import { clamp, dist2, formatTime, pick } from "./Utils";
 import { SaveManager } from "../progression/SaveManager";
@@ -10,6 +10,7 @@ import { XPSystem } from "../progression/XPSystem";
 import { CurrencySystem } from "../progression/CurrencySystem";
 import { SettingsManager } from "../settings/SettingsManager";
 import { MissionSystem } from "../missions/MissionSystem";
+import { MatchObjectives } from "../missions/MatchObjectives";
 import { InventorySystem } from "../inventory/InventorySystem";
 import { HealthSystem } from "../player/HealthSystem";
 import { ArmorSystem } from "../player/ArmorSystem";
@@ -35,6 +36,7 @@ export class GameManager {
   xp = new XPSystem(this.save);
   currency = new CurrencySystem(this.save);
   missions = new MissionSystem(this.save, this.xp);
+  liveMissions = new MatchObjectives();
   shop = new ShopSystem(this.currency);
   network = new NetworkManager();
   audio = new AudioManager(() => this.settings.all);
@@ -95,11 +97,12 @@ export class GameManager {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.BasicShadowMap;
-    this.scene.background = new THREE.Color(0x87c6d9);
-    const fog = new THREE.Fog(0xb7d6e8, 40, 220);
+    this.scene.background = new THREE.Color(0x62c3e0);
+    const fog = new THREE.Fog(0x7ecce0, 90, 420);
     this.scene.fog = fog;
     this.hemi = new THREE.HemisphereLight(0xe9f5ff, 0x3d405b, 0.7);
     this.scene.add(this.hemi);
+    this.scene.add(new THREE.AmbientLight(0xffffff, 0.38));
     this.sun = new THREE.DirectionalLight(0xfff1c9, 1.1);
     this.sun.position.set(40, 70, 20);
     this.sun.castShadow = true;
@@ -216,19 +219,29 @@ export class GameManager {
     this.playerRig = createCharacterRig(this.save.state.profile.characterId);
     this.scene.add(this.playerRig.root);
     attachWeaponMesh(this.playerRig.weaponBone, this.weapons.def.category);
-    this.player.reset(new THREE.Vector3(0, 55, 0));
+    this.player.reset(new THREE.Vector3(0, 16, 32));
     this.player.parachute = true;
     this.phase = "drop";
     this.ui.show("hud");
     this.audio.playLoop("battle");
-    this.weather.set(pick(["sole", "nwaj", "lapli", "bwouya"] as WeatherKind[]));
-    this.ui.toast("Chwazi kote pou desann. Klike pou lanse.");
+    this.weather.set("sole");
+    this.weather.timeOfDay = 10.5;
+    this.liveMissions.reset();
+    this.loot.spawn(new THREE.Vector3(112, 0.5, 22), "EPIC");
+    const bag = this.loot.drops[this.loot.drops.length - 1];
+    if (bag) bag.item.name = "Valiz Okap";
+    this.inventory.add({ id: "start-ar", kind: "weapon", name: "Soley Wouj", qty: 1, weaponId: "soley-wouj" });
+    this.inventory.add({ id: "start-ar2", kind: "armor", name: "Blende Nivo 1", qty: 1, level: 1 });
+    this.armor.applyBody(1);
+    this.weapons.reset();
+    attachWeaponMesh(this.playerRig.weaponBone, this.weapons.def.category);
+    this.ui.toast("Chwazi kote pou desann. Peze TIRE oswa klike pou lanse.");
   }
 
   dropNow() {
     if (this.phase !== "drop") return;
     this.player.parachute = true;
-    this.player.position.y = 48;
+    this.player.position.y = 16;
     this.phase = "parachute";
   }
 
@@ -238,8 +251,9 @@ export class GameManager {
       this.ui.toast("Ou ateri. Chèche zam!");
     }
     if (this.phase === "drop") {
-      this.player.position.y = 48;
+      this.player.position.y = 18;
       this.player.parachute = true;
+      if (this.firing || this.ui.holdingFire || this.matchTime > 10) this.dropNow();
     }
   }
 
@@ -295,6 +309,7 @@ export class GameManager {
       this.player.inVehicle = true;
       this.lastInteract = `Ou antre: ${nearV.def.name}`;
       this.audio.sfx("engine");
+      if (this.liveMissions.complete("drive")) this.ui.toast("Misyon: Kondwi yon machin ✓");
       return;
     }
     const drop = this.loot.nearest(this.player.position.x, this.player.position.z);
@@ -303,6 +318,7 @@ export class GameManager {
       if (taken && this.inventory.add(taken.item)) {
         this.audio.sfx("pickup", 1.1);
         this.ui.toast(`Ou pran ${taken.item.name}`);
+        if (taken.item.name === "Valiz Okap" && this.liveMissions.complete("valiz")) this.ui.toast("Misyon: Ranmase valiz la ✓");
         if (taken.item.kind === "weapon") {
           this.weaponsLooted += 1;
           this.missions.progress("lootWeapons", 1);
@@ -312,6 +328,12 @@ export class GameManager {
         if (taken.item.kind === "armor") this.armor.applyBody(taken.item.level ?? 1);
         if (taken.item.kind === "helmet") this.armor.applyHelmet(taken.item.level ?? 1);
       }
+      return;
+    }
+    const door = this.map.colliders.find((c) => c.enterable && c.door && Math.hypot(c.door.x - this.player.position.x, c.door.z - this.player.position.z) < 2.3);
+    if (door) {
+      if (this.liveMissions.complete("kay")) this.ui.toast("Misyon: Antre nan kay la ✓");
+      this.player.position.set((door.minX + door.maxX) / 2, 0, (door.minZ + door.maxZ) / 2);
       return;
     }
     const downed = this.bots.bots.find((b) => b.downed && b.team === this.playerTeam && b.position.distanceTo(this.player.position) < 2.2);
@@ -569,6 +591,9 @@ export class GameManager {
       this.placement = enemiesLeft + (this.health.dead ? 0 : 1);
       if (!this.health.dead && enemiesLeft === 0) this.endMatch(true);
       if (this.matchTime > 180 && this.zone.radius < 30) this.audio.playLoop("final");
+      if (dist2(this.player.position.x, this.player.position.z, -120, 110) < 42) {
+        if (this.liveMissions.complete("port")) this.ui.toast("Misyon: Ale nan Port Okap ✓");
+      }
     }
     if (this.elapsed - this.lastHud > 0.08) {
       this.lastHud = this.elapsed;
