@@ -27,7 +27,7 @@ import { BotAI } from "../ai/BotAI";
 import { AudioManager } from "../audio/AudioManager";
 import { NetworkManager } from "../network/NetworkManager";
 import { ShopSystem } from "../shop/ShopSystem";
-import { animateRig, attachWeaponMesh, createCharacterRig, type CharacterRig } from "../characters/CharacterFactory";
+import { animateRig, attachWeaponToRig, createCharacterRig, flashMuzzle, updateMuzzleFlash, type CharacterRig } from "../characters/CharacterFactory";
 import { UIManager } from "../ui/UIManager";
 
 export class GameManager {
@@ -125,7 +125,7 @@ export class GameManager {
     this.air = new AirDropSystem(this.scene, this.loot);
     this.vehicles = new VehicleController(this.scene, this.mapBuilder, () => this.map.colliders);
     this.bots = new BotAI(this.scene, this.zone, this.loot);
-    this.playerRig = createCharacterRig(this.save.state.profile.characterId);
+    this.playerRig = createCharacterRig(this.save.state.profile.characterId, 1, { detail: "high" });
     this.scene.add(this.playerRig.root);
     this.ui = new UIManager(uiRoot, this);
     this.bindInput();
@@ -219,9 +219,9 @@ export class GameManager {
     this.bots.spawn(botCount, this.difficulty, this.mode, this.playerTeam);
     this.placement = botCount + 1;
     this.scene.remove(this.playerRig.root);
-    this.playerRig = createCharacterRig(this.save.state.profile.characterId);
+    this.playerRig = createCharacterRig(this.save.state.profile.characterId, 1, { weapon: this.weapons.def.id });
     this.scene.add(this.playerRig.root);
-    attachWeaponMesh(this.playerRig.weaponBone, this.weapons.def.category);
+    attachWeaponToRig(this.playerRig, this.weapons.def.category);
     this.player.reset(new THREE.Vector3(0, 0, 10));
     this.player.yaw = 0;
     this.player.pitch = 0.04;
@@ -240,7 +240,7 @@ export class GameManager {
     this.inventory.add({ id: "start-ar2", kind: "armor", name: "Blende Nivo 1", qty: 1, level: 1 });
     this.armor.applyBody(1);
     this.weapons.reset();
-    attachWeaponMesh(this.playerRig.weaponBone, this.weapons.def.category);
+    attachWeaponToRig(this.playerRig, this.weapons.def.category);
     this.ui.toast("Ou nan lakou Downtown Okap. Chèche zam!");
   }
 
@@ -331,7 +331,7 @@ export class GameManager {
           this.weaponsLooted += 1;
           this.missions.progress("lootWeapons", 1);
           this.weapons.reset();
-          attachWeaponMesh(this.playerRig.weaponBone, this.weapons.def.category);
+          attachWeaponToRig(this.playerRig, this.weapons.def.category);
         }
         if (taken.item.kind === "armor") this.armor.applyBody(taken.item.level ?? 1);
         if (taken.item.kind === "helmet") this.armor.applyHelmet(taken.item.level ?? 1);
@@ -460,7 +460,8 @@ export class GameManager {
     if (!shot) return;
     this.audio.sfx("shoot", 0.85 + Math.random() * 0.3);
     this.screenShake = 0.12 + this.weapons.def.recoil * 0.15;
-    attachWeaponMesh(this.playerRig.weaponBone, shot.weapon.category);
+    attachWeaponToRig(this.playerRig, shot.weapon.category);
+    flashMuzzle(this.playerRig);
     for (const ray of shot.rays) {
       let hitBot: { id: string; dist: number; head: boolean } | null = null;
       for (const b of this.bots.bots) {
@@ -593,7 +594,8 @@ export class GameManager {
                         ? "sprint"
                         : "run"
                       : "idle";
-    animateRig(this.playerRig, anim, this.elapsed);
+    animateRig(this.playerRig, anim, this.elapsed, { aim: this.weapons.ads, aimPitch: this.player.pitch });
+    updateMuzzleFlash(this.playerRig, dt);
     if (this.phase === "playing" || this.phase === "parachute") {
       const enemiesLeft = this.bots.bots.filter((b) => b.alive && b.team !== this.playerTeam).length;
       this.placement = enemiesLeft + (this.health.dead ? 0 : 1);
