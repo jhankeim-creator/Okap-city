@@ -43,7 +43,7 @@ export class GameManager {
 
   renderer: THREE.WebGLRenderer;
   scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(62, 1, 0.1, 420);
+  camera = new THREE.PerspectiveCamera(58, 1, 0.1, 620);
   mapBuilder = new MapBuilder();
   map = this.mapBuilder.build();
   sun: THREE.DirectionalLight;
@@ -96,15 +96,18 @@ export class GameManager {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.BasicShadowMap;
-    this.scene.background = new THREE.Color(0x62c3e0);
-    const fog = new THREE.Fog(0x7ecce0, 90, 420);
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.28;
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.scene.background = new THREE.Color(0x7ec8ea);
+    const fog = new THREE.Fog(0xb7dceb, 160, 520);
     this.scene.fog = fog;
-    this.hemi = new THREE.HemisphereLight(0xe9f5ff, 0x3d405b, 0.7);
+    this.hemi = new THREE.HemisphereLight(0xf4fbff, 0x6a7a4a, 1.05);
     this.scene.add(this.hemi);
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.38));
-    this.sun = new THREE.DirectionalLight(0xfff1c9, 1.1);
-    this.sun.position.set(40, 70, 20);
+    this.scene.add(new THREE.AmbientLight(0xffffff, 0.62));
+    this.sun = new THREE.DirectionalLight(0xfff0cc, 1.7);
+    this.sun.position.set(70, 88, 36);
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(1024, 1024);
     this.sun.shadow.camera.left = -80;
@@ -219,15 +222,18 @@ export class GameManager {
     this.playerRig = createCharacterRig(this.save.state.profile.characterId);
     this.scene.add(this.playerRig.root);
     attachWeaponMesh(this.playerRig.weaponBone, this.weapons.def.category);
-    this.player.reset(new THREE.Vector3(0, 16, 32));
-    this.player.parachute = true;
-    this.phase = "drop";
+    this.player.reset(new THREE.Vector3(0, 0, 10));
+    this.player.yaw = 0;
+    this.player.pitch = 0.04;
+    this.player.parachute = false;
+    this.player.updateCamera();
+    this.phase = "playing";
     this.ui.show("hud");
     this.audio.playLoop("battle");
     this.weather.set("sole");
-    this.weather.timeOfDay = 10.5;
+    this.weather.timeOfDay = 11.2;
     this.liveMissions.reset();
-    this.loot.spawn(new THREE.Vector3(112, 0.5, 22), "EPIC");
+    this.loot.spawn(new THREE.Vector3(5.6, 0.5, 9.2), "EPIC");
     const bag = this.loot.drops[this.loot.drops.length - 1];
     if (bag) bag.item.name = "Valiz Okap";
     this.inventory.add({ id: "start-ar", kind: "weapon", name: "Soley Wouj", qty: 1, weaponId: "soley-wouj" });
@@ -235,7 +241,7 @@ export class GameManager {
     this.armor.applyBody(1);
     this.weapons.reset();
     attachWeaponMesh(this.playerRig.weaponBone, this.weapons.def.category);
-    this.ui.toast("Chwazi kote pou desann. Peze TIRE oswa klike pou lanse.");
+    this.ui.toast("Ou nan lakou Downtown Okap. Chèche zam!");
   }
 
   dropNow() {
@@ -251,7 +257,7 @@ export class GameManager {
       this.ui.toast("Ou ateri. Chèche zam!");
     }
     if (this.phase === "drop") {
-      this.player.position.y = 18;
+      this.player.position.y = 7;
       this.player.parachute = true;
       if (this.firing || this.ui.holdingFire || this.matchTime > 10) this.dropNow();
     }
@@ -289,6 +295,8 @@ export class GameManager {
     this.loot.clear();
     this.vehicles.clear();
     this.phase = "menu";
+    this.ui.pause = false;
+    document.querySelector("#pause-card")?.classList.remove("show");
     this.ui.show("menu");
     this.audio.playLoop("menu");
   }

@@ -18,7 +18,7 @@ export const ZONES: ZoneDef[] = [
 ];
 
 export const VEHICLES: VehicleDef[] = [
-  { id: "suv-lakay", name: "SUV Lakay", kind: "SUV", speed: 24, acceleration: 10, brake: 16, fuel: 100, health: 220, color: "#1d3557" },
+  { id: "suv-lakay", name: "SUV Lakay", kind: "SUV", speed: 24, acceleration: 10, brake: 16, fuel: 100, health: 220, color: "#111318" },
   { id: "pickup-po", name: "Pickup Pò", kind: "PICKUP", speed: 26, acceleration: 12, brake: 14, fuel: 90, health: 200, color: "#6b4226" },
   { id: "sedan-vil", name: "Sedan Vil", kind: "SEDAN", speed: 28, acceleration: 13, brake: 15, fuel: 80, health: 160, color: "#e9c46a" },
   { id: "moto-van", name: "Moto Van", kind: "MOTORCYCLE", speed: 34, acceleration: 18, brake: 12, fuel: 55, health: 90, color: "#e63946" },

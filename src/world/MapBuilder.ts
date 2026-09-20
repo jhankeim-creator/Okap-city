@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { MAP_SIZE, ZONES } from "../data/world";
 import type { ZoneDef } from "../data/types";
+import { PLATE, asphalt, glass, grass, photoMat, roofMat, sand, std, stucco, wood } from "./Materials";
 
 export interface Collider {
   minX: number;
@@ -22,7 +23,7 @@ export interface MapData {
 }
 
 function lamb(color: number, emissive = 0x000000, em = 0) {
-  return new THREE.MeshLambertMaterial({ color, emissive, emissiveIntensity: em });
+  return std(color, { emissive, emissiveIntensity: em });
 }
 
 function addBox(
@@ -44,6 +45,71 @@ function addBox(
   return m;
 }
 
+function hipRoof(w: number, d: number, h: number) {
+  const hw = w / 2;
+  const hd = d / 2;
+  const ridge = Math.min(w, d) * 0.2;
+  const alongX = w >= d;
+  const pos: number[] = [];
+  const uv: number[] = [];
+  const idx: number[] = [];
+
+  const face = (pts: number[][], uvs: number[][]) => {
+    const start = pos.length / 3;
+    for (const p of pts) pos.push(p[0], p[1], p[2]);
+    for (const u of uvs) uv.push(u[0], u[1]);
+    if (pts.length === 3) idx.push(start, start + 1, start + 2);
+    else idx.push(start, start + 1, start + 2, start, start + 2, start + 3);
+  };
+
+  if (alongX) {
+    const r0 = [-hw + ridge, h, 0];
+    const r1 = [hw - ridge, h, 0];
+    face(
+      [[-hw, 0, hd], [hw, 0, hd], r1, r0],
+      [[0, 0], [1, 0], [0.82, 1], [0.18, 1]],
+    );
+    face(
+      [[hw, 0, -hd], [-hw, 0, -hd], r0, r1],
+      [[0, 0], [1, 0], [0.82, 1], [0.18, 1]],
+    );
+    face(
+      [[-hw, 0, -hd], [-hw, 0, hd], r0],
+      [[0, 0], [1, 0], [0.5, 1]],
+    );
+    face(
+      [[hw, 0, hd], [hw, 0, -hd], r1],
+      [[0, 0], [1, 0], [0.5, 1]],
+    );
+  } else {
+    const r0 = [0, h, -hd + ridge];
+    const r1 = [0, h, hd - ridge];
+    face(
+      [[-hw, 0, -hd], [-hw, 0, hd], r1, r0],
+      [[0, 0], [1, 0], [0.82, 1], [0.18, 1]],
+    );
+    face(
+      [[hw, 0, hd], [hw, 0, -hd], r0, r1],
+      [[0, 0], [1, 0], [0.82, 1], [0.18, 1]],
+    );
+    face(
+      [[-hw, 0, hd], [hw, 0, hd], r1],
+      [[0, 0], [1, 0], [0.5, 1]],
+    );
+    face(
+      [[hw, 0, -hd], [-hw, 0, -hd], r0],
+      [[0, 0], [1, 0], [0.5, 1]],
+    );
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  return geo;
+}
+
 export class MapBuilder {
   build(): MapData {
     const group = new THREE.Group();
@@ -53,8 +119,11 @@ export class MapBuilder {
     const zoneMeshes = new THREE.Group();
     group.add(zoneMeshes);
 
+    this.sky(group);
+    this.photoHorizon(group);
     this.ground(group);
     this.ocean(group);
+    this.distantHills(group);
     this.roads(group);
 
     for (const zone of ZONES) {
@@ -65,44 +134,75 @@ export class MapBuilder {
     return { group, colliders, interactables, spawnPoints, zoneMeshes };
   }
 
-  private ground(group: THREE.Group) {
-    const geo = new THREE.PlaneGeometry(MAP_SIZE * 2.2, MAP_SIZE * 2.2, 40, 40);
-    const pos = geo.attributes.position;
-    const colors: number[] = [];
-    for (let i = 0; i < pos.count; i++) {
-      const x = pos.getX(i);
-      const z = pos.getY(i);
-      const n = Math.sin(x * 0.03) * Math.cos(z * 0.03) * 1.6;
-      if (z > 155) pos.setZ(i, n * 0.1);
-      else pos.setZ(i, Math.max(0, n));
-      const sand = z > 145;
-      const grass = z < -90 || x < -90;
-      const c = new THREE.Color(sand ? 0xe9c46a : grass ? 0x52796f : 0x6b705c);
-      colors.push(c.r, c.g, c.b);
+  private sky(group: THREE.Group) {
+    const sky = new THREE.Mesh(
+      new THREE.SphereGeometry(520, 32, 20),
+      new THREE.MeshBasicMaterial({ color: 0x7ec8ea, side: THREE.BackSide, fog: false }),
+    );
+    group.add(sky);
+    const sun = new THREE.Mesh(new THREE.SphereGeometry(10, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffe7a3, fog: false }));
+    sun.position.set(110, 78, 48);
+    group.add(sun);
+  }
+
+  private photoHorizon(group: THREE.Group) {
+    const plates = [
+      { tex: PLATE.city, ang: 0.15, w: 210, h: 62 },
+      { tex: PLATE.coast, ang: 1.72, w: 180, h: 52 },
+      { tex: PLATE.harbor, ang: 3.2, w: 140, h: 44 },
+      { tex: PLATE.hills, ang: 4.7, w: 150, h: 46 },
+    ];
+    const r = 210;
+    for (const p of plates) {
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(p.w, p.h), photoMat(p.tex, false));
+      mesh.position.set(Math.sin(p.ang) * r, p.h * 0.38, Math.cos(p.ang) * r);
+      mesh.lookAt(0, p.h * 0.32, 0);
+      group.add(mesh);
     }
-    geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
-    geo.rotateX(-Math.PI / 2);
-    const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true }));
-    mesh.receiveShadow = true;
-    group.add(mesh);
+  }
+
+  private ground(group: THREE.Group) {
+    const lawn = new THREE.Mesh(new THREE.PlaneGeometry(MAP_SIZE * 2.2, MAP_SIZE * 2.2), grass());
+    lawn.rotation.x = -Math.PI / 2;
+    lawn.receiveShadow = true;
+    group.add(lawn);
+    const beach = new THREE.Mesh(new THREE.PlaneGeometry(420, 90), sand());
+    beach.rotation.x = -Math.PI / 2;
+    beach.position.set(-20, 0.03, 168);
+    beach.receiveShadow = true;
+    group.add(beach);
   }
 
   private ocean(group: THREE.Group) {
     const water = new THREE.Mesh(
-      new THREE.PlaneGeometry(900, 280, 20, 8),
-      new THREE.MeshLambertMaterial({ color: 0x1d8a99, transparent: true, opacity: 0.88 }),
+      new THREE.PlaneGeometry(980, 320, 24, 10),
+      new THREE.MeshStandardMaterial({ color: 0x1b93b0, roughness: 0.16, metalness: 0.22, transparent: true, opacity: 0.94 }),
     );
     water.rotation.x = -Math.PI / 2;
-    water.position.set(-20, 0.05, 250);
+    water.position.set(-20, 0.02, 268);
     group.add(water);
   }
 
+  private distantHills(group: THREE.Group) {
+    const mat = grass();
+    for (let i = 0; i < 18; i++) {
+      const a = (i / 18) * Math.PI * 2 + 0.2;
+      const r = 188 + (i % 4) * 10;
+      const hill = new THREE.Mesh(new THREE.SphereGeometry(16 + (i % 5) * 5, 10, 7, 0, Math.PI * 2, 0, Math.PI / 2), mat);
+      hill.position.set(Math.cos(a) * r, 0, Math.sin(a) * r);
+      hill.scale.y = 1.35 + (i % 3) * 0.28;
+      group.add(hill);
+    }
+  }
+
   private roads(group: THREE.Group) {
-    const mat = lamb(0x2b2d31);
-    const mark = lamb(0xd4a017);
+    const mat = asphalt();
+    const mark = std(0xf4f1ea);
     const axes = [
-      { w: 14, d: 360, x: 0, z: 10 },
-      { w: 360, d: 12, x: 0, z: 0 },
+      { w: 14, d: 150, x: 0, z: 130 },
+      { w: 14, d: 150, x: 0, z: -110 },
+      { w: 150, d: 12, x: 130, z: 0 },
+      { w: 150, d: 12, x: -130, z: 0 },
       { w: 12, d: 260, x: 110, z: 10 },
       { w: 12, d: 260, x: -120, z: 10 },
       { w: 240, d: 10, x: -20, z: 88 },
@@ -171,55 +271,34 @@ export class MapBuilder {
     }
   }
 
-  private building(
-    parent: THREE.Group,
-    x: number,
-    z: number,
-    w: number,
-    h: number,
-    d: number,
-    color: number,
-    colliders: Collider[],
-    enterable = false,
-  ) {
-    const mat = lamb(color);
-    addBox(parent, w, h, d, x, h / 2, z, mat);
-    addBox(parent, w + 0.4, 0.25, d + 0.4, x, h + 0.1, z, lamb(0x3d405b));
-    for (let i = 0; i < 3; i++) {
-      addBox(parent, 0.35, 0.45, 0.08, x - w * 0.25 + i * 0.4, h * 0.55, z + d / 2 + 0.02, lamb(0x7ec8e3, 0x7ec8e3, 0.2), false);
-    }
-    if (enterable) {
-      addBox(parent, 1.2, 2.1, 0.12, x, 1.05, z + d / 2 + 0.04, lamb(0x3a2a1a));
-      colliders.push({
-        minX: x - w / 2,
-        maxX: x + w / 2,
-        minZ: z - d / 2,
-        maxZ: z + d / 2,
-        minY: 0,
-        maxY: h,
-        enterable: true,
-        door: new THREE.Vector3(x, 0, z + d / 2),
-      });
-    } else {
-      colliders.push({ minX: x - w / 2, maxX: x + w / 2, minZ: z - d / 2, maxZ: z + d / 2, minY: 0, maxY: h });
-    }
-  }
-
   private downtown(g: THREE.Group, zone: ZoneDef, colliders: Collider[], interactables: MapData["interactables"]) {
-    const colors = [0xd4a373, 0xe9c46a, 0xf4a261, 0xe76f51, 0x2a9d8f, 0xf1faee];
+    this.heroCourtyard(g, colliders, interactables);
+    const colors = [0xd9c3a3, 0x8ecae6, 0xf4a261, 0x90be6d, 0xf1faee, 0xe07a5f, 0xbde0fe, 0xf2d0a4, 0xb5838d];
+    const plates = [PLATE.cream, PLATE.blue];
     let n = 0;
     for (let ix = -2; ix <= 2; ix++) {
       for (let iz = -2; iz <= 2; iz++) {
-        if (Math.abs(ix) + Math.abs(iz) === 0) continue;
-        const w = 10 + ((ix + 3) % 3) * 2;
-        const d = 10 + ((iz + 2) % 3) * 2;
-        const h = 10 + ((n * 7) % 16);
-        this.building(g, zone.x + ix * 18, zone.z + iz * 18, w, h, d, colors[n % colors.length], colliders, n % 3 === 0);
+        if (ix === 0 && (iz === 0 || iz === 1 || iz === -1)) continue;
+        this.caribbeanHouse(g, zone.x + ix * 17, zone.z + iz * 17, colors[n % colors.length], colliders, true, plates[n % 2]);
+        this.palm(g, zone.x + ix * 17 + 6.2, zone.z + iz * 17 + 4.2);
         n++;
       }
     }
-    addBox(g, 16, 1.2, 16, zone.x, 0.6, zone.z, lamb(0x457b9d));
-    interactables.push({ kind: "crate", position: new THREE.Vector3(zone.x + 6, 0, zone.z + 6), radius: 2 });
+    this.church(g, zone.x - 28, zone.z - 22, colliders);
+  }
+
+  private heroCourtyard(g: THREE.Group, colliders: Collider[], interactables: MapData["interactables"]) {
+    addBox(g, 34, 0.22, 32, 0, 0.12, 8, std(0xd7c7a6), false);
+    this.caribbeanHouse(g, 0, -4, 0xd8cbb8, colliders, true, PLATE.cream);
+    this.caribbeanHouse(g, 16, -2, 0x8eb8d4, colliders, true, PLATE.blue);
+    this.palm(g, -7.5, 5);
+    this.palm(g, 8.5, 3.5, 1.15);
+    this.palm(g, -11, -1, 0.9);
+    addBox(g, 1.45, 0.42, 0.72, 5.6, 0.55, 9.2, std(0x1c2118));
+    addBox(g, 0.7, 0.85, 0.7, 6.8, 0.48, 10.4, lamb(0xd4a017));
+    this.flag(g, -4.6, 0.6);
+    interactables.push({ kind: "crate", position: new THREE.Vector3(5.6, 0, 9.2), radius: 2 });
+    interactables.push({ kind: "vehicle-spot", position: new THREE.Vector3(10, 0, 16), radius: 3 });
   }
 
   private market(g: THREE.Group, zone: ZoneDef, colliders: Collider[]) {
@@ -227,38 +306,64 @@ export class MapBuilder {
       const x = zone.x + ((i % 6) - 2.5) * 8;
       const z = zone.z + (Math.floor(i / 6) - 1) * 10;
       addBox(g, 5.5, 2.4, 4.2, x, 1.2, z, lamb(i % 2 ? 0xe07a5f : 0xf2cc8f));
-      addBox(g, 6, 0.15, 4.6, x, 2.5, z, lamb(0x9b2226));
+      addBox(g, 6, 0.15, 4.6, x, 2.5, z, roofMat());
       colliders.push({ minX: x - 2.7, maxX: x + 2.7, minZ: z - 2.1, maxZ: z + 2.1, minY: 0, maxY: 2.5 });
       addBox(g, 0.8, 0.6, 0.8, x + 1.4, 0.4, z + 1.6, lamb(0x6b4226));
     }
   }
 
   private houses(g: THREE.Group, zone: ZoneDef, colliders: Collider[], interactables: MapData["interactables"], base: number) {
-    const palette = [base, 0xe07a5f, 0x2a9d8f, 0xf4a261, 0xf1faee, 0xb5838d, 0x457b9d, 0xffddd2];
+    const palette = [base, 0xe07a5f, 0x2a9d8f, 0xf4a261, 0xf1faee, 0xb5838d, 0x457b9d, 0xffddd2, 0x8ecae6];
+    const plates = [PLATE.cream, PLATE.blue];
     for (let i = 0; i < 16; i++) {
       const x = zone.x + ((i % 4) - 1.5) * 16;
       const z = zone.z + (Math.floor(i / 4) - 1.5) * 16;
-      this.caribbeanHouse(g, x, z, palette[i % palette.length], colliders, true);
+      this.caribbeanHouse(g, x, z, palette[i % palette.length], colliders, true, i % 2 === 0 ? plates[i % 2] : undefined);
       this.palm(g, x + 5.6, z + 3.2);
       if (i % 3 === 0) this.flag(g, x - 4.2, z + 3.4);
+      if (i % 4 === 0) interactables.push({ kind: "crate", position: new THREE.Vector3(x + 4, 0, z + 5), radius: 1.8 });
     }
   }
 
-  private caribbeanHouse(parent: THREE.Group, x: number, z: number, color: number, colliders: Collider[], enterable = true) {
-    const w = 8.4;
-    const d = 7.2;
-    const h = 4.6;
-    addBox(parent, w, h, d, x, h / 2, z, lamb(color));
-    const roof = new THREE.Mesh(new THREE.ConeGeometry(6.4, 2.2, 4), lamb(0xc36f3c));
-    roof.position.set(x, h + 1.1, z);
-    roof.rotation.y = Math.PI / 4;
+  private caribbeanHouse(
+    parent: THREE.Group,
+    x: number,
+    z: number,
+    color: number,
+    colliders: Collider[],
+    enterable = true,
+    plate?: string,
+  ) {
+    const w = 10.4;
+    const d = 8.2;
+    const h = 6.6;
+    addBox(parent, w, h, d, x, h / 2, z, stucco(color));
+    const roof = new THREE.Mesh(hipRoof(w + 1.6, d + 1.6, 2.8), roofMat());
+    roof.position.set(x, h + 0.02, z);
     roof.castShadow = true;
     parent.add(roof);
-    addBox(parent, 1.15, 2.15, 0.12, x, 1.1, z + d / 2 + 0.04, lamb(0x3a2a1a));
-    addBox(parent, 0.7, 0.7, 0.08, x - 2.1, 2.6, z + d / 2 + 0.05, lamb(0x7ec8e3, 0x7ec8e3, 0.15), false);
-    addBox(parent, 0.7, 0.7, 0.08, x + 2.1, 2.6, z + d / 2 + 0.05, lamb(0x7ec8e3, 0x7ec8e3, 0.15), false);
-    addBox(parent, 3.2, 0.12, 1.4, x, 3.15, z + d / 2 + 0.6, lamb(0xede0d4));
-    addBox(parent, 0.12, 1.1, 1.4, x - 1.55, 2.6, z + d / 2 + 0.6, lamb(0xede0d4));
+    addBox(parent, w + 0.2, 0.16, 2.1, x, 3.42, z + d / 2 + 0.7, std(0xf4efe6));
+    addBox(parent, 0.08, 1.05, 2.05, x - w * 0.42, 3.95, z + d / 2 + 0.7, wood());
+    addBox(parent, 0.08, 1.05, 2.05, x + w * 0.42, 3.95, z + d / 2 + 0.7, wood());
+    addBox(parent, w * 0.84, 0.07, 0.07, x, 4.48, z + d / 2 + 1.68, wood());
+    addBox(parent, 1.35, 2.3, 0.12, x, 1.18, z + d / 2 + 0.05, wood());
+    addBox(parent, 0.9, 1.1, 0.08, x - 2.5, 2.05, z + d / 2 + 0.06, glass(), false);
+    addBox(parent, 0.9, 1.1, 0.08, x + 2.5, 2.05, z + d / 2 + 0.06, glass(), false);
+    addBox(parent, 0.9, 1.0, 0.08, x - 2.5, 4.7, z + d / 2 + 0.06, glass(), false);
+    addBox(parent, 0.9, 1.0, 0.08, x + 2.5, 4.7, z + d / 2 + 0.06, glass(), false);
+    const face = plate ?? PLATE.cream;
+    const walls = [
+      { px: 0, pz: d / 2 + 0.12, ry: 0, bw: w + 0.15, bh: h + 2.4 },
+      { px: 0, pz: -d / 2 - 0.12, ry: Math.PI, bw: w + 0.15, bh: h + 2.4 },
+      { px: w / 2 + 0.12, pz: 0, ry: Math.PI / 2, bw: d + 0.15, bh: h + 2.4 },
+      { px: -w / 2 - 0.12, pz: 0, ry: -Math.PI / 2, bw: d + 0.15, bh: h + 2.4 },
+    ];
+    for (const wall of walls) {
+      const facade = new THREE.Mesh(new THREE.PlaneGeometry(wall.bw, wall.bh), photoMat(face));
+      facade.position.set(x + wall.px, h / 2 + 0.85, z + wall.pz);
+      facade.rotation.y = wall.ry;
+      parent.add(facade);
+    }
     colliders.push({
       minX: x - w / 2,
       maxX: x + w / 2,
@@ -271,17 +376,36 @@ export class MapBuilder {
     });
   }
 
-  private palm(parent: THREE.Group, x: number, z: number) {
+  private church(parent: THREE.Group, x: number, z: number, colliders: Collider[]) {
+    addBox(parent, 8.4, 7.2, 11, x, 3.6, z, stucco(0xf3efe6));
+    const roof = new THREE.Mesh(hipRoof(9.4, 12.2, 2.5), roofMat());
+    roof.position.set(x, 7.25, z);
+    parent.add(roof);
+    addBox(parent, 2.3, 6.4, 2.3, x, 9.4, z - 4.4, stucco(0xf7f1e4));
+    const steeple = new THREE.Mesh(new THREE.ConeGeometry(1.55, 3.4, 4), roofMat());
+    steeple.position.set(x, 14.2, z - 4.4);
+    steeple.rotation.y = Math.PI / 4;
+    parent.add(steeple);
+    colliders.push({ minX: x - 4.2, maxX: x + 4.2, minZ: z - 5.5, maxZ: z + 5.5, minY: 0, maxY: 12 });
+  }
+
+  private palm(parent: THREE.Group, x: number, z: number, scale = 1) {
     const tree = new THREE.Group();
-    addBox(tree, 0.28, 4.4, 0.28, 0, 2.2, 0, lamb(0x6b4226));
-    for (let i = 0; i < 6; i++) {
-      const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, 2.6), lamb(0x2d6a4f));
-      leaf.position.set(0, 4.3, 0.7);
-      leaf.rotation.y = (i / 6) * Math.PI * 2;
-      leaf.rotation.x = -0.55;
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.2, 5.4, 8), std(0x8a5a32, { roughness: 0.88 }));
+    trunk.position.y = 2.7;
+    trunk.castShadow = true;
+    tree.add(trunk);
+    const leafMat = std(0x2f7a3e, { roughness: 0.65 });
+    for (let i = 0; i < 9; i++) {
+      const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.07, 3.1), leafMat);
+      leaf.position.set(0, 5.25, 0.95);
+      leaf.rotation.y = (i / 9) * Math.PI * 2;
+      leaf.rotation.x = -0.62;
+      leaf.castShadow = true;
       tree.add(leaf);
     }
     tree.position.set(x, 0, z);
+    tree.scale.setScalar(scale);
     parent.add(tree);
   }
 
@@ -289,6 +413,7 @@ export class MapBuilder {
     addBox(parent, 0.08, 4.2, 0.08, x, 2.1, z, lamb(0x222831));
     addBox(parent, 1.15, 0.42, 0.04, x + 0.62, 3.85, z, lamb(0x00209f));
     addBox(parent, 1.15, 0.42, 0.04, x + 0.62, 3.43, z, lamb(0xd21034));
+    addBox(parent, 0.22, 0.22, 0.05, x + 0.62, 3.64, z, lamb(0xf6f3ea));
   }
 
   private port(g: THREE.Group, zone: ZoneDef, colliders: Collider[]) {
@@ -306,10 +431,9 @@ export class MapBuilder {
   private beach(g: THREE.Group, zone: ZoneDef, colliders: Collider[]) {
     for (let i = 0; i < 6; i++) {
       const x = zone.x - 20 + i * 9;
-      addBox(g, 6, 3.2, 6, x, 1.6, zone.z - 6, lamb(0xf4f1ea));
-      colliders.push({ minX: x - 3, maxX: x + 3, minZ: zone.z - 9, maxZ: zone.z - 3, minY: 0, maxY: 3.2 });
+      this.caribbeanHouse(g, x, zone.z - 6, 0xf4f1ea, colliders, true);
     }
-    for (let i = 0; i < 10; i++) this.palm(g, zone.x - 18 + i * 4.2, zone.z + 8);
+    for (let i = 0; i < 12; i++) this.palm(g, zone.x - 18 + i * 4.2, zone.z + 8, 0.95 + (i % 3) * 0.1);
   }
 
   private industrial(g: THREE.Group, zone: ZoneDef, colliders: Collider[]) {
@@ -327,7 +451,7 @@ export class MapBuilder {
     for (let i = 0; i < 4; i++) {
       addBox(g, 0.8, 5, 0.8, zone.x - 6 + i * 4, 2.5, zone.z, lamb(0xcfcfcf));
     }
-    addBox(g, 10, 4.5, 8, zone.x + 12, 2.25, zone.z + 8, lamb(0xf1faee));
+    addBox(g, 10, 4.5, 8, zone.x + 12, 2.25, zone.z + 8, stucco(0xf1faee));
     colliders.push({ minX: zone.x + 7, maxX: zone.x + 17, minZ: zone.z + 4, maxZ: zone.z + 12, minY: 0, maxY: 4.5 });
     for (let i = 0; i < 6; i++) addBox(g, 0.7, 0.9, 0.7, zone.x - 8 + i * 1.2, 0.45, zone.z + 6, lamb(0xd4a017));
   }
@@ -351,15 +475,9 @@ export class MapBuilder {
 
   private forest(g: THREE.Group, zone: ZoneDef) {
     for (let i = 0; i < 40; i++) {
-      const tree = new THREE.Group();
-      addBox(tree, 0.45, 3.6, 0.45, 0, 1.8, 0, lamb(0x6b4226));
-      const leaf = new THREE.Mesh(new THREE.SphereGeometry(1.8, 7, 6), lamb(0x2d6a4f));
-      leaf.position.y = 4;
-      tree.add(leaf);
       const a = Math.random() * Math.PI * 2;
       const r = Math.random() * zone.radius * 0.85;
-      tree.position.set(zone.x + Math.cos(a) * r, 0, zone.z + Math.sin(a) * r);
-      g.add(tree);
+      this.palm(g, zone.x + Math.cos(a) * r, zone.z + Math.sin(a) * r, 0.75 + Math.random() * 0.4);
     }
   }
 
@@ -389,7 +507,7 @@ export class MapBuilder {
   private airport(g: THREE.Group, zone: ZoneDef, colliders: Collider[]) {
     addBox(g, 90, 0.15, 10, zone.x, 0.08, zone.z, lamb(0x8d99ae), false);
     addBox(g, 8, 0.16, 8, zone.x - 20, 0.1, zone.z, lamb(0xd4a017), false);
-    addBox(g, 28, 10, 16, zone.x + 18, 5, zone.z - 22, lamb(0xf1faee));
+    addBox(g, 28, 10, 16, zone.x + 18, 5, zone.z - 22, stucco(0xf1faee));
     colliders.push({ minX: zone.x + 4, maxX: zone.x + 32, minZ: zone.z - 30, maxZ: zone.z - 14, minY: 0, maxY: 10 });
     addBox(g, 18, 4, 8, zone.x - 24, 2, zone.z + 16, lamb(0x4a4e69));
     colliders.push({ minX: zone.x - 33, maxX: zone.x - 15, minZ: zone.z + 12, maxZ: zone.z + 20, minY: 0, maxY: 4 });
@@ -398,11 +516,11 @@ export class MapBuilder {
   private scatterProps(group: THREE.Group, colliders: Collider[]) {
     const crateMat = lamb(0x6b4226);
     const barrelMat = lamb(0xd4a017);
-    const wallMat = lamb(0x7f5539);
+    const wallMat = stucco(0xe8ddd0);
     for (let i = 0; i < 70; i++) {
       const x = (Math.random() - 0.5) * 340;
       const z = (Math.random() - 0.5) * 340;
-      if (Math.hypot(x, z) < 12) continue;
+      if (Math.hypot(x, z) < 16) continue;
       if (i % 3 === 0) {
         addBox(group, 1.1, 1.1, 1.1, x, 0.55, z, crateMat);
         colliders.push({ minX: x - 0.55, maxX: x + 0.55, minZ: z - 0.55, maxZ: z + 0.55, minY: 0, maxY: 1.1 });
@@ -426,8 +544,6 @@ export class MapBuilder {
     let nz = z;
     for (const c of colliders) {
       if (c.enterable) continue;
-      const px = clampTo(nx, c.minX - radius, c.maxX + radius);
-      const pz = clampTo(nz, c.minZ - radius, c.maxZ + radius);
       if (nx > c.minX - radius && nx < c.maxX + radius && nz > c.minZ - radius && nz < c.maxZ + radius) {
         const dx1 = Math.abs(nx - (c.minX - radius));
         const dx2 = Math.abs(nx - (c.maxX + radius));
@@ -439,13 +555,7 @@ export class MapBuilder {
         else if (m === dz1) nz = c.minZ - radius;
         else nz = c.maxZ + radius;
       }
-      void px;
-      void pz;
     }
     return { x: nx, z: nz };
   }
-}
-
-function clampTo(v: number, a: number, b: number) {
-  return Math.max(Math.min(v, b), a);
 }

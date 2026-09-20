@@ -574,7 +574,7 @@ export function paintSign(text: string, bg = "#1b6b4a", fg = "#ffffff", size = 2
 
 const _cache = new Map<string, THREE.Material>();
 
-function std(
+function proc(
   key: string,
   colorMap: HTMLCanvasElement,
   opts: {
@@ -639,22 +639,22 @@ export interface MaterialKit {
 }
 
 export const MAT: MaterialKit = {
-  asphalt: std("asphalt", paintAsphalt(256), { repeat: 6, roughness: 0.92, normalStrength: 1.2 }),
-  concrete: std("concrete", paintConcrete(256), { repeat: 3, roughness: 0.9 }),
-  sidewalk: std("sidewalk", paintConcrete(256, 17), { repeat: 5, color: 0xe9e4da, roughness: 0.88 }),
-  sand: std("sand", paintSand(256), { repeat: 30, roughness: 1, normalStrength: 1.5 }),
-  grass: std("grass", paintGrass(256), { repeat: 34, roughness: 1, normalStrength: 1.2 }),
-  dirt: std("dirt", paintDirt(256), { repeat: 26, roughness: 1 }),
-  rock: std("rock", paintRock(256), { repeat: 4, roughness: 1, normalStrength: 1.8 }),
-  roof: std("roof", paintRoofTiles(256), { repeat: 3, roughness: 0.75, normalStrength: 1.6 }),
-  wood: std("wood", paintWood(256), { repeat: 2, roughness: 0.8 }),
-  metal: std("metal", paintMetal(256), { repeat: 2, roughness: 0.35, metalness: 0.75 }),
-  palmBark: std("palmBark", paintPalmBark(128), { repeat: 2, roughness: 0.95 }),
-  stucco: () => std("stucco", paintStucco(256), { repeat: 3, roughness: 0.92 }),
-  wall: (color: number) => std(`wall-${color}`, paintStucco(256), { repeat: 3, color, roughness: 0.9 }),
-  painted: (color: number, roughness = 0.55) => std(`paint-${color}-${roughness}`, paintMetal(128), { repeat: 2, color, roughness, metalness: 0.35 }),
+  asphalt: proc("asphalt", paintAsphalt(256), { repeat: 6, roughness: 0.92, normalStrength: 1.2 }),
+  concrete: proc("concrete", paintConcrete(256), { repeat: 3, roughness: 0.9 }),
+  sidewalk: proc("sidewalk", paintConcrete(256, 17), { repeat: 5, color: 0xe9e4da, roughness: 0.88 }),
+  sand: proc("sand", paintSand(256), { repeat: 30, roughness: 1, normalStrength: 1.5 }),
+  grass: proc("grass", paintGrass(256), { repeat: 34, roughness: 1, normalStrength: 1.2 }),
+  dirt: proc("dirt", paintDirt(256), { repeat: 26, roughness: 1 }),
+  rock: proc("rock", paintRock(256), { repeat: 4, roughness: 1, normalStrength: 1.8 }),
+  roof: proc("roof", paintRoofTiles(256), { repeat: 3, roughness: 0.75, normalStrength: 1.6 }),
+  wood: proc("wood", paintWood(256), { repeat: 2, roughness: 0.8 }),
+  metal: proc("metal", paintMetal(256), { repeat: 2, roughness: 0.35, metalness: 0.75 }),
+  palmBark: proc("palmBark", paintPalmBark(128), { repeat: 2, roughness: 0.95 }),
+  stucco: () => proc("stucco", paintStucco(256), { repeat: 3, roughness: 0.92 }),
+  wall: (color: number) => proc(`wall-${color}`, paintStucco(256), { repeat: 3, color, roughness: 0.9 }),
+  painted: (color: number, roughness = 0.55) => proc(`paint-${color}-${roughness}`, paintMetal(128), { repeat: 2, color, roughness, metalness: 0.35 }),
   glass: () =>
-    std("glass", paintConcrete(64, 3), {
+    proc("glass", paintConcrete(64, 3), {
       repeat: 1,
       color: 0x9fc6d8,
       roughness: 0.06,
@@ -695,11 +695,11 @@ export const MAT: MaterialKit = {
     return m;
   },
   awning: (colors: [string, string] = ["#e63946", "#f1faee"]) =>
-    std(`awning-${colors.join()}`, paintFabricStripes(128, 121, colors), { repeat: 3, roughness: 0.7, side: THREE.DoubleSide }),
-  graffiti: std("graffiti", paintGraffiti(512), { repeat: 1, roughness: 0.9 }),
-  sign: (text: string, bg = "#1b6b4a", fg = "#ffffff") => std(`sign-${text}-${bg}`, paintSign(text, bg, fg, 256), { repeat: 1, roughness: 0.4 }),
+    proc(`awning-${colors.join()}`, paintFabricStripes(128, 121, colors), { repeat: 3, roughness: 0.7, side: THREE.DoubleSide }),
+  graffiti: proc("graffiti", paintGraffiti(512), { repeat: 1, roughness: 0.9 }),
+  sign: (text: string, bg = "#1b6b4a", fg = "#ffffff") => proc(`sign-${text}-${bg}`, paintSign(text, bg, fg, 256), { repeat: 1, roughness: 0.4 }),
   windowLit: () =>
-    std("windowLit", paintStucco(64, 7), {
+    proc("windowLit", paintStucco(64, 7), {
       repeat: 1,
       color: 0x2a2118,
       emissive: 0xffb45c,
@@ -719,3 +719,98 @@ export const MAT: MaterialKit = {
 export function clearMaterialCache() {
   _cache.clear();
 }
+
+/* ------------------------------------------------------------------ *
+ * API teksti foto (public/textures/*.png) — soti nan pase fotoreyalis la
+ * ------------------------------------------------------------------ */
+
+const loader = new THREE.TextureLoader();
+const cache = new Map<string, THREE.Texture>();
+const matCache = new Map<string, THREE.Material>();
+
+function tex(path: string, repeat = 2, wrap = true) {
+  const key = `${path}:${repeat}:${wrap}`;
+  if (cache.has(key)) return cache.get(key)!;
+  const t = loader.load(path);
+  if (wrap) {
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(repeat, repeat);
+  } else {
+    t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
+  }
+  t.colorSpace = THREE.SRGBColorSpace;
+  cache.set(key, t);
+  return t;
+}
+
+export function std(color: number | string, extras: Partial<THREE.MeshStandardMaterialParameters> = {}) {
+  return new THREE.MeshStandardMaterial({
+    color,
+    roughness: 0.82,
+    metalness: 0.04,
+    ...extras,
+  });
+}
+
+export function stucco(color: number) {
+  return std(color, { map: tex("/textures/stucco.png", 3), roughness: 0.9 });
+}
+
+export function roofMat() {
+  return std(0xc36f3c, { map: tex("/textures/roof.png", 4), roughness: 0.75 });
+}
+
+export function asphalt() {
+  return std(0x6a6d72, { map: tex("/textures/asphalt.png", 8), roughness: 0.95 });
+}
+
+export function grass() {
+  return std(0x6a9a4e, { map: tex("/textures/grass.png", 10), roughness: 1 });
+}
+
+export function sand() {
+  return std(0xe4c57a, { map: tex("/textures/sand.png", 6), roughness: 1 });
+}
+
+export function wood() {
+  return std(0x6b4226, { map: tex("/textures/wood.png", 2), roughness: 0.7 });
+}
+
+export function glass() {
+  return new THREE.MeshStandardMaterial({
+    color: 0x7ec8e3,
+    roughness: 0.12,
+    metalness: 0.35,
+    transparent: true,
+    opacity: 0.55,
+  });
+}
+
+export function photoMat(path: string, fog = true) {
+  const key = `basic:${path}:${fog}`;
+  if (matCache.has(key)) return matCache.get(key) as THREE.MeshBasicMaterial;
+  const m = new THREE.MeshBasicMaterial({ map: tex(path, 1, false), fog });
+  matCache.set(key, m);
+  return m;
+}
+
+export function photoStd(path: string) {
+  const key = `std:${path}`;
+  if (matCache.has(key)) return matCache.get(key) as THREE.MeshStandardMaterial;
+  const m = new THREE.MeshStandardMaterial({
+    map: tex(path, 1, false),
+    roughness: 0.72,
+    metalness: 0.05,
+  });
+  matCache.set(key, m);
+  return m;
+}
+
+export const PLATE = {
+  city: "/textures/plates/city-horizon.png",
+  cream: "/textures/plates/house-cream.png",
+  blue: "/textures/plates/house-blue.png",
+  coast: "/textures/plates/coast-sunset.png",
+  harbor: "/textures/plates/harbor-bay.png",
+  hills: "/textures/plates/harbor-hills.png",
+};

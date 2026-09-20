@@ -65,6 +65,7 @@ export function createCharacterRig(id: string, scale = 1, opts: RigOptions = {})
   const root = joints.root;
   root.scale.setScalar(scale);
   root.name = `rig-${def.id}`;
+  root.userData.characterId = def.id;
 
   const dressed = dressCharacter(joints, def, 0, opts.detail ?? "high");
 
