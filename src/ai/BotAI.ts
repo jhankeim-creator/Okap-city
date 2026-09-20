@@ -157,7 +157,7 @@ export class BotAI {
         animateRig(b.rig, "run", t);
       } else {
         wish.set(Math.sin(t * 0.2 + iHash(b.id)), 0, Math.cos(t * 0.17 + iHash(b.id)));
-        animateRig(b.rig, "walk", t, 0.8);
+        animateRig(b.rig, "walk", t, { speed: 0.8 });
       }
 
       if (b.state !== "fight" && b.state !== "heal") {
