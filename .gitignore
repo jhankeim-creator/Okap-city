@@ -18,3 +18,6 @@ coverage/
 .env
 .env.*
 !android/app/src/main/res/**
+
+# Zouti kaptire videyo (cache lokal)
+.capture/

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ht">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OKAP CITY — Fèy Pèsonaj 3D</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #0a0f16; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; }
+      #app { position: absolute; inset: 0; }
+      .label { position: absolute; bottom: 5vh; left: 0; right: 0; text-align: center; color: #f6f3ea; letter-spacing: 0.28em; font-size: 13px; text-shadow: 0 2px 12px #000; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <div class="label">OKAP CITY — 8 PÈSONAJ ORIGINAL</div>
+    <script type="module">
+      import { mountCharacterPreview } from "/src/preview/CharacterPreview.ts";
+      mountCharacterPreview(document.getElementById("app"));
+    </script>
+  </body>
+</html>
