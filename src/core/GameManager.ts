@@ -103,9 +103,9 @@ export class GameManager {
     this.scene.background = new THREE.Color(0x7ec8ea);
     const fog = new THREE.Fog(0xb7dceb, 160, 520);
     this.scene.fog = fog;
-    this.hemi = new THREE.HemisphereLight(0xe9f5ff, 0x3d405b, 0.7);
+    this.hemi = new THREE.HemisphereLight(0xf4fbff, 0x6a7a4a, 1.05);
     this.scene.add(this.hemi);
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.38));
+    this.scene.add(new THREE.AmbientLight(0xffffff, 0.62));
     this.sun = new THREE.DirectionalLight(0xfff0cc, 1.7);
     this.sun.position.set(70, 88, 36);
     this.sun.castShadow = true;

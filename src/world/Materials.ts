@@ -37,11 +37,11 @@ export function roofMat() {
 }
 
 export function asphalt() {
-  return std(0x3a3d42, { map: tex("/textures/asphalt.png", 8), roughness: 0.95 });
+  return std(0x6a6d72, { map: tex("/textures/asphalt.png", 8), roughness: 0.95 });
 }
 
 export function grass() {
-  return std(0x4e7a46, { map: tex("/textures/grass.png", 10), roughness: 1 });
+  return std(0x6a9a4e, { map: tex("/textures/grass.png", 10), roughness: 1 });
 }
 
 export function sand() {

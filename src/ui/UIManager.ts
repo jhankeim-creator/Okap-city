@@ -283,6 +283,11 @@ export class UIManager {
     panel.classList.toggle("show", ["missions", "arsenal", "chars", "cars", "shop", "profile", "rank", "settings", "friends", "story", "br"].includes(name));
     match.classList.toggle("show", ["matchmaking", "loading", "victory", "defeat"].includes(name));
     hud.classList.toggle("show", name === "hud");
+    if (name !== "hud") {
+      this.pause = false;
+      this.root.querySelector("#pause-card")?.classList.remove("show");
+      hud.classList.remove("show");
+    }
     if (name === "menu") this.renderMenu();
     if (name === "matchmaking") match.innerHTML = this.matchmakingHtml();
     if (name === "loading") match.innerHTML = this.loadingHtml();

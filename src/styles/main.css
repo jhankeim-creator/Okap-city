@@ -26,7 +26,7 @@ html, body, #game-root { width: 100%; height: 100%; overflow: hidden; background
 .voice { max-width: 640px; line-height: 1.5; color: var(--white); text-shadow: 0 2px 16px #000; }
 
 #cinematic-overlay { background: linear-gradient(180deg, rgba(7,17,31,0.08), rgba(7,17,31,0.35)); }
-.cine-photo { background: linear-gradient(180deg, rgba(7,17,31,0.08), rgba(7,17,31,0.38)), url("/concept/city.png") center/cover no-repeat !important; }
+.cine-photo { background: linear-gradient(180deg, rgba(7,17,31,0.08), rgba(7,17,31,0.38)), url("/textures/plates/city-horizon.png") center/cover no-repeat !important; }
 .cine-copy { position: absolute; left: 6vw; bottom: 10vh; display: grid; gap: 12px; }
 .cine-copy .logo { font-size: 56px; opacity: 0; transition: opacity 0.8s; }
 .cine-copy .voice { opacity: 1; transition: opacity 0.6s; }
@@ -34,10 +34,10 @@ html, body, #game-root { width: 100%; height: 100%; overflow: hidden; background
 .menu-shell { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 28px 36px; background: linear-gradient(90deg, rgba(7,17,31,0.88) 0%, rgba(7,17,31,0.35) 62%, rgba(7,17,31,0.1) 100%); }
 .photo-menu { background:
   linear-gradient(90deg, rgba(7,17,31,0.62) 0%, rgba(7,17,31,0.12) 48%, rgba(7,17,31,0.02) 100%),
-  url("/concept/city.png") center/cover no-repeat !important; }
+  url("/textures/plates/city-horizon.png") center/cover no-repeat !important; }
 .photo-load { background:
   linear-gradient(180deg, rgba(7,17,31,0.35), rgba(7,17,31,0.55)),
-  url("/concept/city.png") center/cover no-repeat !important; }
+  url("/textures/plates/city-horizon.png") center/cover no-repeat !important; }
 .roster-photo { position: relative; margin: 10px 0 16px; }
 .roster-photo img { width: 100%; border-radius: 12px; display: block; }
 .roster-screen { position: absolute; inset: 0; background: #07111f; }

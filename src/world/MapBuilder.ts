@@ -199,8 +199,10 @@ export class MapBuilder {
     const mat = asphalt();
     const mark = std(0xf4f1ea);
     const axes = [
-      { w: 14, d: 360, x: 0, z: 10 },
-      { w: 360, d: 12, x: 0, z: 0 },
+      { w: 14, d: 150, x: 0, z: 130 },
+      { w: 14, d: 150, x: 0, z: -110 },
+      { w: 150, d: 12, x: 130, z: 0 },
+      { w: 150, d: 12, x: -130, z: 0 },
       { w: 12, d: 260, x: 110, z: 10 },
       { w: 12, d: 260, x: -120, z: 10 },
       { w: 240, d: 10, x: -20, z: 88 },
@@ -286,7 +288,7 @@ export class MapBuilder {
   }
 
   private heroCourtyard(g: THREE.Group, colliders: Collider[], interactables: MapData["interactables"]) {
-    addBox(g, 26, 0.07, 24, 0, 0.035, 8, std(0xd4c4a8), false);
+    addBox(g, 34, 0.22, 32, 0, 0.12, 8, std(0xd7c7a6), false);
     this.caribbeanHouse(g, 0, -4, 0xd8cbb8, colliders, true, PLATE.cream);
     this.caribbeanHouse(g, 16, -2, 0x8eb8d4, colliders, true, PLATE.blue);
     this.palm(g, -7.5, 5);
@@ -336,7 +338,7 @@ export class MapBuilder {
     const d = 8.2;
     const h = 6.6;
     addBox(parent, w, h, d, x, h / 2, z, stucco(color));
-    const roof = new THREE.Mesh(hipRoof(w + 1.4, d + 1.4, 2.15), roofMat());
+    const roof = new THREE.Mesh(hipRoof(w + 1.6, d + 1.6, 2.8), roofMat());
     roof.position.set(x, h + 0.02, z);
     roof.castShadow = true;
     parent.add(roof);
@@ -349,9 +351,17 @@ export class MapBuilder {
     addBox(parent, 0.9, 1.1, 0.08, x + 2.5, 2.05, z + d / 2 + 0.06, glass(), false);
     addBox(parent, 0.9, 1.0, 0.08, x - 2.5, 4.7, z + d / 2 + 0.06, glass(), false);
     addBox(parent, 0.9, 1.0, 0.08, x + 2.5, 4.7, z + d / 2 + 0.06, glass(), false);
-    if (plate) {
-      const facade = new THREE.Mesh(new THREE.PlaneGeometry(w - 0.35, h - 0.55), photoMat(plate));
-      facade.position.set(x, h / 2 + 0.12, z + d / 2 + 0.09);
+    const face = plate ?? PLATE.cream;
+    const walls = [
+      { px: 0, pz: d / 2 + 0.1, ry: 0, bw: w - 0.3, bh: h - 0.5 },
+      { px: 0, pz: -d / 2 - 0.1, ry: Math.PI, bw: w - 0.3, bh: h - 0.5 },
+      { px: w / 2 + 0.1, pz: 0, ry: Math.PI / 2, bw: d - 0.3, bh: h - 0.5 },
+      { px: -w / 2 - 0.1, pz: 0, ry: -Math.PI / 2, bw: d - 0.3, bh: h - 0.5 },
+    ];
+    for (const wall of walls) {
+      const facade = new THREE.Mesh(new THREE.PlaneGeometry(wall.bw, wall.bh), photoMat(face));
+      facade.position.set(x + wall.px, h / 2 + 0.1, z + wall.pz);
+      facade.rotation.y = wall.ry;
       parent.add(facade);
     }
     colliders.push({
