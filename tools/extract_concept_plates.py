@@ -32,7 +32,7 @@ def main() -> None:
     save(combat.crop((220, 70, 780, 400)), "harbor-hills.png")
     save(explore.crop((190, 55, 620, 390)), "harbor-bay.png")
     save(combat.crop((820, 68, 1360, 470)), "house-blue.png")
-    save(explore.crop((640, 32, 1260, 470)), "house-cream.png")
+    save(explore.crop((640, 78, 1260, 470)), "house-cream.png")
 
     # 1536x1024: peyizaj solèy kouche san kadran.
     save(drive.crop((280, 95, 1260, 500)), "coast-sunset.png")

@@ -222,7 +222,7 @@ export class GameManager {
     this.playerRig = createCharacterRig(this.save.state.profile.characterId);
     this.scene.add(this.playerRig.root);
     attachWeaponMesh(this.playerRig.weaponBone, this.weapons.def.category);
-    this.player.reset(new THREE.Vector3(0, 0, 14));
+    this.player.reset(new THREE.Vector3(0, 0, 10));
     this.player.yaw = 0;
     this.player.pitch = 0.04;
     this.player.parachute = false;

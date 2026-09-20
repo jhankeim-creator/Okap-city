@@ -353,14 +353,14 @@ export class MapBuilder {
     addBox(parent, 0.9, 1.0, 0.08, x + 2.5, 4.7, z + d / 2 + 0.06, glass(), false);
     const face = plate ?? PLATE.cream;
     const walls = [
-      { px: 0, pz: d / 2 + 0.1, ry: 0, bw: w - 0.3, bh: h - 0.5 },
-      { px: 0, pz: -d / 2 - 0.1, ry: Math.PI, bw: w - 0.3, bh: h - 0.5 },
-      { px: w / 2 + 0.1, pz: 0, ry: Math.PI / 2, bw: d - 0.3, bh: h - 0.5 },
-      { px: -w / 2 - 0.1, pz: 0, ry: -Math.PI / 2, bw: d - 0.3, bh: h - 0.5 },
+      { px: 0, pz: d / 2 + 0.12, ry: 0, bw: w + 0.15, bh: h + 2.4 },
+      { px: 0, pz: -d / 2 - 0.12, ry: Math.PI, bw: w + 0.15, bh: h + 2.4 },
+      { px: w / 2 + 0.12, pz: 0, ry: Math.PI / 2, bw: d + 0.15, bh: h + 2.4 },
+      { px: -w / 2 - 0.12, pz: 0, ry: -Math.PI / 2, bw: d + 0.15, bh: h + 2.4 },
     ];
     for (const wall of walls) {
       const facade = new THREE.Mesh(new THREE.PlaneGeometry(wall.bw, wall.bh), photoMat(face));
-      facade.position.set(x + wall.px, h / 2 + 0.1, z + wall.pz);
+      facade.position.set(x + wall.px, h / 2 + 0.85, z + wall.pz);
       facade.rotation.y = wall.ry;
       parent.add(facade);
     }
