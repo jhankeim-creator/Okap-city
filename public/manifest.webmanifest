@@ -1,0 +1,14 @@
+{
+  "name": "OKAP CITY",
+  "short_name": "OKAP CITY",
+  "description": "Batay la kòmanse nan Okap! Jwèt aksyon 3D an Kreyòl Ayisyen.",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#07111f",
+  "theme_color": "#07111f",
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
