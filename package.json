@@ -1,0 +1,32 @@
+{
+  "name": "okap-city",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OKAP CITY — jwèt aksyon 3D orijinal an Kreyòl Ayisyen",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host --port 5173",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host --port 4173",
+    "test": "tsx --test tests/*.test.ts",
+    "generate:audio": "python3 tools/generate_audio.py",
+    "generate:icons": "python3 tools/generate_icons.py",
+    "cap:sync": "cap sync android",
+    "android:sync": "cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/app": "^7.1.0",
+    "@capacitor/core": "^7.4.3",
+    "@capacitor/haptics": "^7.0.2",
+    "@capacitor/status-bar": "^7.0.3",
+    "three": "^0.170.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3",
+    "@types/three": "^0.170.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  }
+}
