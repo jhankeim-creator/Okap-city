@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { CHARACTERS } from "../data/characters";
 import { WEAPONS } from "../data/weapons";
 import type { BotDifficulty, TeamMode } from "../data/types";
-import { animateRig, attachWeaponMesh, createCharacterRig, type CharacterRig } from "../characters/CharacterFactory";
+import { animateRig, attachWeaponToRig, createCharacterRig, type CharacterRig } from "../characters/CharacterFactory";
 import type { SafeZoneSystem } from "../world/SafeZoneSystem";
 import type { LootSystem } from "../loot/LootSystem";
 import { clamp, pick, rand } from "../core/Utils";
@@ -68,14 +68,14 @@ export class BotAI {
 
   private makeBot(i: number, team: number, difficulty: BotDifficulty, ally: boolean): BotActor {
     const def = CHARACTERS[(i + 1) % CHARACTERS.length];
-    const rig = createCharacterRig(def.id, 1);
+    const rig = createCharacterRig(def.id, 1, { detail: "high" });
     const ang = rand(0, Math.PI * 2);
     const r = rand(12, 70);
     const pos = new THREE.Vector3(Math.cos(ang) * r, 0, Math.sin(ang) * r);
     rig.root.position.copy(pos);
     this.scene.add(rig.root);
     const weapon = pick(WEAPONS.filter((w) => w.category !== "MELEE"));
-    attachWeaponMesh(rig.weaponBone, weapon.category);
+    attachWeaponToRig(rig, weapon.category);
     return {
       id: `bot-${i}`,
       name: ally ? `${def.name} (ekip)` : def.name,
