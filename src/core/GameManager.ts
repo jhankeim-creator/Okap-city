@@ -289,6 +289,8 @@ export class GameManager {
     this.loot.clear();
     this.vehicles.clear();
     this.phase = "menu";
+    this.ui.pause = false;
+    document.querySelector("#pause-card")?.classList.remove("show");
     this.ui.show("menu");
     this.audio.playLoop("menu");
   }

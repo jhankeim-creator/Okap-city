@@ -10,7 +10,7 @@ export class UIManager {
   look = { x: 0, y: 0 };
   holdingFire = false;
   private screen = "cinematic";
-  private pause = false;
+  pause = false;
   private chatOpen = false;
   private toastT = 0;
   private toastText = "";
@@ -190,8 +190,9 @@ export class UIManager {
         this.applySetting(arg ?? "");
         break;
       case "menu":
-        g.returnToMenu();
         this.pause = false;
+        this.root.querySelector("#pause-card")?.classList.remove("show");
+        g.returnToMenu();
         break;
       case "replay":
         g.beginMatchmaking(g.mode, g.difficulty);
